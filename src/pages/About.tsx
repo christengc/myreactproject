@@ -29,7 +29,7 @@ export default function About() {
         <Center><Heading as="h2" color="white" fontSize="5xl" p="1em">Nice to meet you :)</Heading></Center>
         <Text maxW="37em" p="0.5em 0em" color="white" fontSize="xl">Since you are here, let me tell you a bit about myself. On this page you can read about my hobbies and my professional interests.</Text>
 
-        <Flex justify="flex-end" pr="1em" mt="-9em"><Image borderRadius="full"fit="cover" w="20em" padding="2em" src="christen.jpg" alt="react" /></Flex>
+        <Flex justify="flex-end" pr="1em" mt="-9em"><Image borderRadius="full"fit="cover" w="20em" padding="2em" src="/christen.jpg" alt="react" /></Flex>
         </Box>
       <Box px="2" bg="orange.200" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
          <Heading as="h3" size="2xl">It all started with HTML 4.01 and Helena Christensen</Heading>
