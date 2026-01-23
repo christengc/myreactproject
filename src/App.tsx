@@ -45,7 +45,7 @@ function App() {
                 </ListItem>
                 <List.Item>
                   <Icon as={PiReadCvLogoFill} mr="0.5em"></Icon>
-                  <Link variant="plain" href="cv" textAlign="left">
+                  <Link variant="plain" href="/cv" textAlign="left">
                     Curriculum vitae
                   </Link>
                 </List.Item>
@@ -57,7 +57,7 @@ function App() {
                 </List.Item>
                 <List.Item>
                   <Icon as={RiProjector2Fill} mr="0.5em"></Icon>
-                  <Link variant="plain" href="projects" textAlign="left">
+                  <Link variant="plain" href="/projects" textAlign="left">
                     Selected Projects
                   </Link>
                 </List.Item>
