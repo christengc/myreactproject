@@ -10,7 +10,7 @@ export default function Projects() {
                   <Image
                     objectFit="cover"
                     maxW="200px"
-                    src="public/ikea.jpg"
+                    src="/ikea.jpg"
                     alt="Caffe Latte"
                   />
                   <Box>
@@ -33,7 +33,7 @@ export default function Projects() {
                     objectFit="cover"
                     maxW="200px"
                     order="3"
-                     src="../../public/smartwatch.png"
+                     src="/smartwatch.png"
                     alt="Caffe Latte"
                   />
                   <Box>
@@ -56,7 +56,7 @@ export default function Projects() {
                   <Image
                     objectFit="cover"
                     maxW="200px"
-                     src="../../public/sammenspil.png"
+                     src="/sammenspil.png"
                   />
                   <Box>
                     <Card.Body>
