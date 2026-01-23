@@ -1,4 +1,4 @@
-import { Fieldset, Stack, Container,Textarea, Field,Text, Input, NativeSelect, For, Button } from "@chakra-ui/react";
+import { Fieldset, Stack, Container,Textarea, Field,Text, Input, Button } from "@chakra-ui/react";
 
 export default function Contact() {
   return (

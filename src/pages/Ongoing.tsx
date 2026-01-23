@@ -1,4 +1,4 @@
-import { Flex, Spinner,Heading, Box, Text} from "@chakra-ui/react"
+import { Flex, Spinner, Box, Text} from "@chakra-ui/react"
 
 export default function Ongoing() {
   return (

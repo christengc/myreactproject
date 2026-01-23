@@ -14,14 +14,11 @@ import { FaExternalLinkSquareAlt } from "react-icons/fa";
 const ItemStyle = {
    height: "8em" ,
    margin: "2em 2em" ,
-   rounded: "lg" ,
    backgroundColor: "white",
-   textAlign: "center",
    borderWidth: "2px",
    borderRadius: "32px",
    fontWeight:"bold",
    padding: "0.5em"
-   
 }
 
 
@@ -40,7 +37,7 @@ export default function About() {
          <Text maxW="37em" p="0.5em 0em" color="Black" fontSize="md">
           I developed my first webpage in 1998, when I was 15 years old approximatly when the HTML 4.01 specification was released. You can still find the page on Way Back Machine here:  
           <Link color="Black" target="_blank" href="https://web.archive.org/web/20030402184329/http://home0.inet.tele.dk/Christen/" m="0em 1em">
-           The Greatest Tribute to Helena Christensen <FaExternalLinkSquareAlt  m='2px' />
+           The Greatest Tribute to Helena Christensen <FaExternalLinkSquareAlt  />
           </Link>
           <br/><br/>
           I then took a long brake from web development and released my next webpage in 2013, approximatly when HTML5 was released, as I develoepd a collaboration platform based on html5 and web 2.0 principles. This site was called sammenspil.dk you can also see in way back machine here:
@@ -62,28 +59,28 @@ export default function About() {
         <Heading as="h3" color="white"size="2xl">What i like to do in my sparetime</Heading>
         <Grid templateRows="repeat(2, 1fr)" templateColumns="repeat(3, 1fr)" gap={4} mt="2em">
             <GridItem>
-              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">Tennis       
+              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">Tennis       
               <Center mt="0.5em"><Icon color="yellow.solid"><IoIosTennisball background-color="black" size="4em"/></Icon></Center>
               </Box>
             </GridItem>
             <GridItem >
-            <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
+            <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
               Swimming
               <Center mt="0.5em"><Icon color="cyan.solid"><FaPersonSwimming size="4em"/></Icon></Center>
               </Box></GridItem>
-            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
+            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
               Roller skating
             <Center mt="0.5em"><Icon color="pink.solid"><MdRollerSkating size="4em"/></Icon></Center>
             </Box></GridItem>
-            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
+            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
               Computers
               <Center mt="0.5em"><Icon color="cyan.solid"><FaComputer size="4em"/></Icon></Center>
               </Box></GridItem>
-            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
+            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
               Family
               <Center mt="0.5em"><Icon color="cyan.solid"><MdOutlineFamilyRestroom size="4em"/></Icon></Center>
               </Box></GridItem>
-            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" >
+            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
               DIY
               <Center mt="0.5em"  ><Icon color="black.solid"><GiHammerNails size="4em"/></Icon></Center>
               </Box></GridItem>
