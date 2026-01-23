@@ -39,7 +39,7 @@ function App() {
               <List.Root bg="yellow.solid" style={noBullet}>
                 <ListItem>
                   <Icon as={FaKissWinkHeart} mr="0.5em"></Icon>
-                  <Link variant="plain" href="about" textAlign="left">
+                  <Link variant="plain" href="/about" textAlign="left">
                     Who is Christen?
                   </Link>
                 </ListItem>
@@ -51,7 +51,7 @@ function App() {
                 </List.Item>
                 <List.Item>
                   <Icon as={PiReadCvLogoFill} mr="0.5em"></Icon>
-                  <Link variant="plain" href="ongoing" textAlign="left">
+                  <Link variant="plain" href="/ongoing" textAlign="left">
                     Current Work
                   </Link>
                 </List.Item>
@@ -63,7 +63,7 @@ function App() {
                 </List.Item>
                 <List.Item>
                 <Icon as={MdContactPhone} mr="0.5em"></Icon>
-                <Link variant="plain" href="contact" textAlign="left">
+                <Link variant="plain" href="/contact" textAlign="left">
                     Contact
                   </Link>
                 </List.Item>
