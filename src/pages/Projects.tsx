@@ -65,6 +65,10 @@ export default function Projects() {
                        <Link href="https://web.archive.org/web/20180808002923/http://watchandspin.com/  " target="_blank" color="white" p="0em 1em">www.watchandspin.com <FaExternalLinkSquareAlt  /></Link>
                        or if you would like to view a video demonstration of the website and app its here:
                        <Link href="https://www.youtube.com/watch?v=I02Dh1zemuM" target="_blank" color="white" p="0em 1em">demo on youtube <FaExternalLinkSquareAlt  /></Link>
+                       If you would like to see the code there is a link for the web repository here:
+                       <Link href="https://github.com/christengc/www" target="_blank" color="white" p="0em 1em">Watchandspin website repository <FaExternalLinkSquareAlt  /></Link>
+                       and the app repository here:
+                        <Link href="https://github.com/christengc/Watch-IT-android-app" target="_blank" color="white" p="0em 1em">Watchandspin android app repository <FaExternalLinkSquareAlt  /></Link>
                       </Card.Description>
                     </Card.Body>
                     <Card.Footer>
