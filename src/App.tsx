@@ -1,5 +1,5 @@
 import './App.css'
-import { Heading, Link, Flex, List,ListItem, Spacer, Box, Container, Grid, GridItem, Icon} from "@chakra-ui/react"
+import { Heading, Link, Flex, List,ListItem, Spacer, Drawer, Portal, Button, CloseButton, Box, Container, Grid, GridItem, Icon} from "@chakra-ui/react"
 import { Outlet } from "react-router-dom";
 import { MdContactPhone } from "react-icons/md";
 import { RiProjector2Fill } from "react-icons/ri";
@@ -20,7 +20,10 @@ const noBullet = {
   margin: 0
 }
 
+function handleClick() {
 
+    
+  }
 
 function App() {
 
@@ -30,10 +33,62 @@ function App() {
           
           <Heading bg="yellow.solid" p="1em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" >
             <Flex alignContent="flex-center" justify="space-around">
-              <Box hideFrom="md" m="auto">
-                <Icon color="white">
-                  <GiHamburgerMenu size="2em"/>
-                </Icon>
+              <Box as="button" hideFrom="md" m="auto" onClick={handleClick}>
+              <Drawer.Root size="sm" placement="start">
+                <Drawer.Trigger>
+                  <Button variant="outline" size="sm">
+                    <Icon color="white">
+                      <GiHamburgerMenu size="2em"/>
+                    </Icon>
+                  </Button>
+                </Drawer.Trigger>
+                <Portal>
+                  <Drawer.Backdrop />
+                  <Drawer.Positioner>
+                    <Drawer.Content>
+                      <Drawer.Header bg="yellow.solid">
+                      </Drawer.Header>
+                      <Drawer.Body bg="yellow.solid">
+                                      <List.Root bg="yellow.solid" style={noBullet}>
+                <ListItem>
+                  <Icon as={FaKissWinkHeart} mr="0.5em"></Icon>
+                  <Link variant="plain" href="/about" textAlign="left">
+                    Who is Christen?
+                  </Link>
+                </ListItem>
+                <List.Item>
+                  <Icon as={PiReadCvLogoFill} mr="0.5em"></Icon>
+                  <Link variant="plain" href="/cv" textAlign="left">
+                    Curriculum vitae
+                  </Link>
+                </List.Item>
+                <List.Item>
+                  <Icon as={PiReadCvLogoFill} mr="0.5em"></Icon>
+                  <Link variant="plain" href="/ongoing" textAlign="left">
+                    Current Work
+                  </Link>
+                </List.Item>
+                <List.Item>
+                  <Icon as={RiProjector2Fill} mr="0.5em"></Icon>
+                  <Link variant="plain" href="/projects" textAlign="left">
+                    Selected Projects
+                  </Link>
+                </List.Item>
+                <List.Item>
+                <Icon as={MdContactPhone} mr="0.5em"></Icon>
+                <Link variant="plain" href="/contact" textAlign="left">
+                    Contact
+                  </Link>
+                </List.Item>
+              </List.Root>
+                      </Drawer.Body>
+                        <Drawer.CloseTrigger asChild>
+                          <CloseButton size="sm" />
+                        </Drawer.CloseTrigger>
+                    </Drawer.Content>
+                  </Drawer.Positioner>
+                </Portal>
+              </Drawer.Root>
                 </Box>
               <Spacer />
               <Box textStyle="4xl" p="10px" style={applyFont}>DIGITAL</Box>
@@ -43,7 +98,7 @@ function App() {
           </Heading>
                   
         <Grid templateColumns="minmax(220px, 1fr) 1fr 1fr 1fr 1fr 1fr" gap={4}>
-          <GridItem as="aside" hideBelow="md" colSpan={1} bg="bg.subtle" height="100vh">
+          <GridItem as="aside" hideBelow="md" colSpan={1} bg="bg.subtle" height="100vh" id="menuNav">
             
             <Box bg="yellow.solid" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
             
