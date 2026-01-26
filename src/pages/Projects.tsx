@@ -27,7 +27,7 @@ export default function Projects() {
                   </Box>
                 </Card.Root>
               </GridItem>
-              <GridItem m="0em 0em" rounded="lg"  mt="auto" mb="auto" >
+              <GridItem m="0em 0em" rounded="lg"  mt="auto" mb="auto" maxW={{smDown: "350px"}} >
                 <Card.Root bg="gray.solid"  color="white" flexDirection="row" overflow="hidden" maxW="3xl" mr="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image
                     hideBelow="md"
@@ -50,7 +50,7 @@ export default function Projects() {
                   </Box>
                 </Card.Root>
               </GridItem>
-              <GridItem m="0em 0em" rounded="lg"  mt="auto" mb="auto" >
+              <GridItem m="0em 0em" rounded="lg"  mt="auto" mb="auto" maxW={{smDown: "350px"}}>
                 <Card.Root bg="cyan.solid"  color="white" flexDirection="row" overflow="hidden" maxW="3xl" ml="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image
                     hideBelow="md"
@@ -79,7 +79,7 @@ export default function Projects() {
                   </Box>
                 </Card.Root>
               </GridItem>
-              <GridItem m="0em 0em" rounded="lg"  mt="auto" mb="auto" >
+              <GridItem m="0em 0em" rounded="lg"  mt="auto" mb="auto" maxW={{smDown: "350px"}}>
                 <Card.Root bg="gray.solid"  color="white" flexDirection="row" overflow="hidden" maxW="3xl" mr="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image
                     hideBelow="md"
