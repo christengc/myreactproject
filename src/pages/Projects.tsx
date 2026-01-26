@@ -8,6 +8,7 @@ export default function Projects() {
               <GridItem m="0em 0em" rounded="lg"  mt="auto" mb="auto" maxW={{smDown: "350px"}}>
                 <Card.Root size="sm" bg="cyan.solid"  color="white" flexDirection="row" overflow="hidden" maxW="3xl" ml="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image
+                    hideBelow="md"
                     objectFit="cover"
                     maxW="200px"
                     src="/nordea.png"
@@ -29,6 +30,7 @@ export default function Projects() {
               <GridItem m="0em 0em" rounded="lg"  mt="auto" mb="auto" >
                 <Card.Root bg="gray.solid"  color="white" flexDirection="row" overflow="hidden" maxW="3xl" mr="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image
+                    hideBelow="md"
                     objectFit="cover"
                     maxW="200px"
                     src="/ikea.jpg"
@@ -51,6 +53,7 @@ export default function Projects() {
               <GridItem m="0em 0em" rounded="lg"  mt="auto" mb="auto" >
                 <Card.Root bg="cyan.solid"  color="white" flexDirection="row" overflow="hidden" maxW="3xl" ml="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image
+                    hideBelow="md"
                     objectFit="cover"
                     maxW="200px"
                     order="3"
@@ -79,6 +82,7 @@ export default function Projects() {
               <GridItem m="0em 0em" rounded="lg"  mt="auto" mb="auto" >
                 <Card.Root bg="gray.solid"  color="white" flexDirection="row" overflow="hidden" maxW="3xl" mr="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image
+                    hideBelow="md"
                     objectFit="cover"
                     maxW="200px"
                      src="/sammenspil.png"
