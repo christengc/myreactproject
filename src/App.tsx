@@ -135,7 +135,7 @@ function App() {
             </Box>
 
           </GridItem>
-          <GridItem as="main" colSpan={{ mdDown: 6, lg: 5 }} bg="bg.subtle">
+          <GridItem as="main" colSpan={{ base: 6, md: 5 }} bg="bg.subtle">
 
           <Outlet>
 
