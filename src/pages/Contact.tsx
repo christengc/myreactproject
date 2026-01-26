@@ -46,21 +46,18 @@ export default function Contact() {
       <Box width="100%" pt="5em">
               <HStack>
                 <Flex>
-                  <Text color="white" display="inline" alignContent="center" pr="0.5em">christenchristensen@live.dk</Text>
-                  
                   <Icon color="black.solid" height="100%"><MdOutlineEmail size="2em"/></Icon>
+                  <Text color="white" display="inline" alignContent="center" pl="0.5em">christenchristensen@live.dk</Text>
                 </Flex>
                 <Spacer />
                 <Flex>
-                  <Image height="2em" display="inline" src="/Uden titel.png" pr="0.5em"></Image>
-                  
                   <Icon><BiMobileVibration size="2em"/></Icon>
+                  <Image height="2em" display="inline" src="/Uden titel.png" pl="0.5em"></Image>
                 </Flex>
                 <Spacer />
                 <Flex>
-                  <Link alignContent="center" color="white" href="https://www.linkedin.com/in/christen-g-christensen/>" target="_blank" mr="0.5em">LinkedIn</Link>
-                  
                   <Icon color="black.solid" height="100%"><ImLinkedin size="2em"/></Icon>
+                  <Link alignContent="center" color="white" href="https://www.linkedin.com/in/christen-g-christensen/>" target="_blank" ml="0.5em">LinkedIn</Link>
                 </Flex>
               </HStack>
       </Box>

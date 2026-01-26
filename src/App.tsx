@@ -5,6 +5,7 @@ import { MdContactPhone } from "react-icons/md";
 import { RiProjector2Fill } from "react-icons/ri";
 import { FaKissWinkHeart } from "react-icons/fa";
 import { PiReadCvLogoFill } from "react-icons/pi";
+import { GiHamburgerMenu } from "react-icons/gi";
 
 
 const applyFont = {
@@ -28,11 +29,21 @@ function App() {
         <Container bg="bg.subtle">
           
           <Heading bg="yellow.solid" p="1em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" >
-            <Flex alignContent="flex-center" justify="space-around"><Spacer /><Box textStyle="4xl" p="10px" style={applyFont}>DIGITAL</Box><Box alignContent="flex-end" p="10px">Christen</Box><Spacer /></Flex>
+            <Flex alignContent="flex-center" justify="space-around">
+              <Box hideFrom="md" m="auto">
+                <Icon color="white">
+                  <GiHamburgerMenu size="2em"/>
+                </Icon>
+                </Box>
+              <Spacer />
+              <Box textStyle="4xl" p="10px" style={applyFont}>DIGITAL</Box>
+              <Box alignContent="flex-end" p="10px">Christen</Box>
+              <Spacer />
+            </Flex>
           </Heading>
                   
-        <Grid templateColumns="repeat(6, 1fr)" gap={4}>
-          <GridItem as="aside" colSpan={1} bg="bg.subtle" height="100vh">
+        <Grid templateColumns="minmax(220px, 1fr) 1fr 1fr 1fr 1fr 1fr" gap={4}>
+          <GridItem as="aside" hideBelow="md" colSpan={1} bg="bg.subtle" height="100vh">
             
             <Box bg="yellow.solid" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
             
