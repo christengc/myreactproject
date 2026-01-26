@@ -1,5 +1,5 @@
 import './App.css'
-import { Heading, Link, Flex, List,ListItem, Spacer, Drawer, Portal, Button, CloseButton, Box, Container, Grid, GridItem, Icon} from "@chakra-ui/react"
+import { Heading, Link, Flex, List,ListItem, Spacer, Drawer, Portal, Button, CloseButton, Box, Container, Grid, GridItem, Icon, VStack} from "@chakra-ui/react"
 import { Outlet } from "react-router-dom";
 import { MdContactPhone } from "react-icons/md";
 import { RiProjector2Fill } from "react-icons/ri";
@@ -34,13 +34,11 @@ function App() {
           <Heading bg="yellow.solid" p="1em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" >
             <Flex alignContent="flex-center" justify="space-around">
               <Box as="button" hideFrom="md" m="auto" onClick={handleClick}>
-              <Drawer.Root size="sm" placement="start">
+              <Drawer.Root size="xs" placement="start">
                 <Drawer.Trigger>
-                  <Button variant="outline" size="sm">
                     <Icon color="white">
                       <GiHamburgerMenu size="2em"/>
                     </Icon>
-                  </Button>
                 </Drawer.Trigger>
                 <Portal>
                   <Drawer.Backdrop />
@@ -49,38 +47,38 @@ function App() {
                       <Drawer.Header bg="yellow.solid">
                       </Drawer.Header>
                       <Drawer.Body bg="yellow.solid">
-                                      <List.Root bg="yellow.solid" style={noBullet}>
-                <ListItem>
+                <VStack bg="yellow.solid" style={noBullet}>
+                <Box p="1em" ml="1em" mr="auto">
                   <Icon as={FaKissWinkHeart} mr="0.5em"></Icon>
                   <Link variant="plain" href="/about" textAlign="left">
                     Who is Christen?
                   </Link>
-                </ListItem>
-                <List.Item>
+                </Box>
+                <Box p="1em" ml="1em" mr="auto">
                   <Icon as={PiReadCvLogoFill} mr="0.5em"></Icon>
                   <Link variant="plain" href="/cv" textAlign="left">
                     Curriculum vitae
                   </Link>
-                </List.Item>
-                <List.Item>
+                </Box>
+                <Box p="1em" ml="1em" mr="auto">
                   <Icon as={PiReadCvLogoFill} mr="0.5em"></Icon>
                   <Link variant="plain" href="/ongoing" textAlign="left">
                     Current Work
                   </Link>
-                </List.Item>
-                <List.Item>
+                </Box>
+                <Box p="1em" ml="1em" mr="auto">
                   <Icon as={RiProjector2Fill} mr="0.5em"></Icon>
                   <Link variant="plain" href="/projects" textAlign="left">
                     Selected Projects
                   </Link>
-                </List.Item>
-                <List.Item>
+                </Box>
+                <Box p="1em" ml="1em" mr="auto">
                 <Icon as={MdContactPhone} mr="0.5em"></Icon>
                 <Link variant="plain" href="/contact" textAlign="left">
                     Contact
                   </Link>
-                </List.Item>
-              </List.Root>
+                </Box>
+              </VStack>
                       </Drawer.Body>
                         <Drawer.CloseTrigger asChild>
                           <CloseButton size="sm" />
