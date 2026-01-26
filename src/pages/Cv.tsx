@@ -303,7 +303,7 @@ export default function Cv() {
               </Timeline.Connector>
               <Timeline.Content>
                 <Timeline.Title>
-                  Nordea - Developer, Designer, Scrum master, Business Developer, Product owner.
+                  Nordea - Multiple roles.
                                         <Popover.Root>
                         <Popover.Trigger asChild>
                           <Button size="xs" variant="subtle" rounded="full">
