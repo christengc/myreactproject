@@ -6,6 +6,9 @@ import { FaComputer } from "react-icons/fa6";
 import { MdOutlineFamilyRestroom } from "react-icons/md";
 import { GiHammerNails } from "react-icons/gi";
 import { FaExternalLinkSquareAlt } from "react-icons/fa";
+import { FaChessBoard } from "react-icons/fa6";
+import { GiWeightLiftingUp } from "react-icons/gi";
+
 
 
 
@@ -27,9 +30,9 @@ export default function About() {
     <Container fluid>
       <Box px="2" bg="cyan.solid" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
         <Center><Heading as="h2" color="white" fontSize="5xl" p="1em">Nice to meet you :)</Heading></Center>
-        <Text maxW="37em" p="0.5em 0em" color="white" fontSize="xl">Since you are here, let me tell you a bit about myself. On this page you can read about my hobbies and my professional interests.</Text>
+        <Text maxW="70%" p="0.5em 0em" color="white" fontSize="xl">Since you are here, let me tell you a bit about myself. On this page you can read about my hobbies and my professional interests.</Text>
 
-        <Flex justify="flex-end" pr="1em" mt="-9em"><Image borderRadius="full"fit="cover" w="20em" padding="2em" src="/christen.jpg" alt="react" /></Flex>
+        <Flex justify="flex-end" pr="1em" mt="-9em"><Image borderRadius="full"fit="cover" w="30%" minW="10em" padding="2em" src="/christen.jpg" alt="react" /></Flex>
         </Box>
       <Box px="2" bg="orange.200" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
          <Heading as="h3" size="2xl">It all started with HTML 4.01 and Helena Christensen</Heading>
@@ -57,33 +60,59 @@ export default function About() {
       </Box>
       <Box px="2" bg="cyan.solid" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
         <Heading as="h3" color="white"size="2xl">What i like to do in my sparetime</Heading>
-        <Grid templateRows="repeat(2, 1fr)" templateColumns="repeat(3, 1fr)" gap={4} mt="2em">
+        <Grid templateRows="repeat(2, 1fr)"   
+              templateColumns={{
+              base: "1fr",
+              md: "repeat(2, 1fr)",
+              lg: "repeat(3, 1fr)" }} 
+              gap={4} mt="2em">
             <GridItem>
-              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">Tennis       
-              <Center mt="0.5em"><Icon color="yellow.solid"><IoIosTennisball background-color="black" size="4em"/></Icon></Center>
+              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+                Tennis       
+                <Center mt="0.5em"><Icon color="yellow.solid"><IoIosTennisball background-color="black" size="4em"/></Icon></Center>
               </Box>
             </GridItem>
             <GridItem >
-            <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
-              Swimming
-              <Center mt="0.5em"><Icon color="cyan.solid"><FaPersonSwimming size="4em"/></Icon></Center>
-              </Box></GridItem>
+              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+                Swimming
+                <Center mt="0.5em"><Icon color="cyan.solid"><FaPersonSwimming size="4em"/></Icon></Center>
+              </Box>
+            </GridItem>
             <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
-              Roller skating
-            <Center mt="0.5em"><Icon color="pink.solid"><MdRollerSkating size="4em"/></Icon></Center>
-            </Box></GridItem>
-            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
-              Computers
-              <Center mt="0.5em"><Icon color="cyan.solid"><FaComputer size="4em"/></Icon></Center>
-              </Box></GridItem>
-            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
-              Family
-              <Center mt="0.5em"><Icon color="cyan.solid"><MdOutlineFamilyRestroom size="4em"/></Icon></Center>
-              </Box></GridItem>
-            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
-              DIY
-              <Center mt="0.5em"  ><Icon color="black.solid"><GiHammerNails size="4em"/></Icon></Center>
-              </Box></GridItem>
+                Roller skating
+                <Center mt="0.5em"><Icon color="pink.solid"><MdRollerSkating size="4em"/></Icon></Center>
+              </Box>
+            </GridItem>
+            <GridItem>
+              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+                Computers
+                <Center mt="0.5em"><Icon color="cyan.solid"><FaComputer size="4em"/></Icon></Center>
+              </Box>
+            </GridItem>
+            <GridItem>
+              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+                Family
+                <Center mt="0.5em"><Icon color="cyan.solid"><MdOutlineFamilyRestroom size="4em"/></Icon></Center>
+              </Box>
+            </GridItem>
+            <GridItem>
+              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+                DIY
+                <Center mt="0.5em"  ><Icon color="black.solid"><GiHammerNails size="4em"/></Icon></Center>
+              </Box>
+            </GridItem>
+            <GridItem>
+              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+                Chess
+                <Center mt="0.5em"  ><Icon color="black.solid" height="100%"><FaChessBoard  size="4em" /></Icon></Center>
+              </Box>
+            </GridItem>
+                        <GridItem>
+              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+                Chess
+                <Center mt="0.5em"  ><Icon color="black.solid" height="100%"><GiWeightLiftingUp size="4em"/></Icon></Center>
+              </Box>
+            </GridItem>
         </Grid>
       </Box>
     </Container>
