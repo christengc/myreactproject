@@ -1,4 +1,4 @@
-import { Fieldset, Stack, Container,Textarea, Box,Link,Flex, Spacer, Image, Icon, VStack, Field, Text, Input, Button, HStack } from "@chakra-ui/react";
+import { Fieldset, Container,Textarea, Box,Link,Flex, Spacer, Image, Icon, VStack, Field, Text, Input, Button, Stack } from "@chakra-ui/react";
 import { MdOutlineEmail } from "react-icons/md";
 import { ImLinkedin } from "react-icons/im";
 import { BiMobileVibration } from "react-icons/bi";
@@ -44,9 +44,9 @@ export default function Contact() {
         </Fieldset.Root>
       </Box>
       <Box width="100%" pt="5em">
-              <HStack>
+              <Stack direction={{ lgDown: "column"}}>
                 <Flex>
-                  <Icon color="black.solid" height="100%"><MdOutlineEmail size="2em"/></Icon>
+                  <Icon color="black.solid"><MdOutlineEmail size="2em"/></Icon>
                   <Text color="white" display="inline" alignContent="center" pl="0.5em">christenchristensen@live.dk</Text>
                 </Flex>
                 <Spacer />
@@ -56,10 +56,10 @@ export default function Contact() {
                 </Flex>
                 <Spacer />
                 <Flex>
-                  <Icon color="black.solid" height="100%"><ImLinkedin size="2em"/></Icon>
+                  <Icon color="black.solid"><ImLinkedin size="2em"/></Icon>
                   <Link alignContent="center" color="white" href="https://www.linkedin.com/in/christen-g-christensen/>" target="_blank" ml="0.5em">LinkedIn</Link>
                 </Flex>
-              </HStack>
+              </Stack>
       </Box>
     </VStack>
     </Container>
