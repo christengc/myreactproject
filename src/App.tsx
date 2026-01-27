@@ -90,7 +90,7 @@ function App() {
                 </Box>
               <Spacer />
               <Box textStyle="4xl" p="10px" style={applyFont}>DIGITAL</Box>
-              <Box alignContent="flex-end" p="10px">Christen</Box>
+              <Box alignContent="flex-end" p="10px" pb="12px">Christen</Box>
               <Spacer />
             </Flex>
           </Heading>

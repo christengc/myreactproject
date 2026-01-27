@@ -1,7 +1,10 @@
-import { Timeline, Stack, Button, Popover, Portal, Text, Image } from "@chakra-ui/react";
+import { Timeline, Stack, Button, Popover, Portal, Text, Image, Container, Heading, Center, Spacer, Box } from "@chakra-ui/react";
 
 export default function Cv() {
   return (
+        <Container bg="cyan.solid" color="white" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em" pt="2em" pr="auto" pl="auto">
+        <Heading as="h2" pb="2em" fontSize="2em" ml="0">Curriculum vitae</Heading>
+        <Center>
         <Stack gap="8" pt="2em" pl="1em">
           <Timeline.Root size="xl">
 
@@ -14,11 +17,11 @@ export default function Cv() {
                 <Timeline.Indicator  bg="red.solid" color="black"></Timeline.Indicator>
               </Timeline.Connector>
               <Timeline.Content>
-                <Timeline.Title>
+                <Timeline.Title verticalAlign="top"  mt="2px">
                   Forsvaret - Military service at Kongelige artilleri
                       <Popover.Root>
                         <Popover.Trigger asChild>
-                          <Button size="xs" variant="subtle" rounded="full">
+                          <Button size="2xs" variant="subtle" rounded="full" mr="0" ml="auto">
                             Read more                          
                           </Button>
                         </Popover.Trigger>
@@ -50,11 +53,11 @@ export default function Cv() {
                 <Timeline.Indicator  bg="red.solid" color="black"></Timeline.Indicator>
               </Timeline.Connector>
               <Timeline.Content>
-                <Timeline.Title>
+                <Timeline.Title mt="2px">
                   DTU - Bachelor Electro engineering
                                         <Popover.Root>
                         <Popover.Trigger asChild>
-                          <Button size="xs" variant="subtle" rounded="full">
+                          <Button size="2xs" variant="subtle" rounded="full" mr="0" ml="auto">
                             Read more                          
                           </Button>
                         </Popover.Trigger>
@@ -86,11 +89,11 @@ export default function Cv() {
                 <Timeline.Indicator  bg="green.solid" color="black"></Timeline.Indicator>
               </Timeline.Connector>
               <Timeline.Content>
-                <Timeline.Title>
+                <Timeline.Title mt="2px">
                   Private - Tutor in Math, Physics at highscool level 
                                         <Popover.Root>
                         <Popover.Trigger asChild>
-                          <Button size="xs" variant="subtle" rounded="full">
+                          <Button size="2xs" variant="subtle" rounded="full" mr="0" ml="auto">
                             Read more                          
                           </Button>
                         </Popover.Trigger>
@@ -122,11 +125,11 @@ export default function Cv() {
                 <Timeline.Indicator  bg="cyan.solid" color="black"></Timeline.Indicator>
               </Timeline.Connector>
               <Timeline.Content>
-                <Timeline.Title>
+                <Timeline.Title mt="2px">
                   T.Smedegaard - Project Engineer
                                         <Popover.Root>
                         <Popover.Trigger asChild>
-                          <Button size="xs" variant="subtle" rounded="full">
+                          <Button size="2xs" variant="subtle" rounded="full" mr="0" ml="auto">
                             Read more                          
                           </Button>
                         </Popover.Trigger>
@@ -158,11 +161,11 @@ export default function Cv() {
                 <Timeline.Indicator bg="red.solid" color="black"></Timeline.Indicator>
               </Timeline.Connector>
               <Timeline.Content>
-                <Timeline.Title>
+                <Timeline.Title mt="2px">
                   DTU - M.SC. Digital Media Engineering
                                         <Popover.Root>
                         <Popover.Trigger asChild>
-                          <Button size="xs" variant="subtle" rounded="full">
+                          <Button size="2xs" variant="subtle" rounded="full"  mr="0" ml="auto">
                             Read more                          
                           </Button>
                         </Popover.Trigger>
@@ -194,11 +197,11 @@ export default function Cv() {
                 <Timeline.Indicator bg="cyan.solid" color="black"></Timeline.Indicator>
               </Timeline.Connector>
               <Timeline.Content>
-                <Timeline.Title>
+                <Timeline.Title mt="2px">
                   NNIT - IT Consultant
                                         <Popover.Root>
                         <Popover.Trigger asChild>
-                          <Button size="xs" variant="subtle" rounded="full">
+                          <Button size="2xs" variant="subtle" rounded="full"  mr="0" ml="auto">
                             Read more                          
                           </Button>
                         </Popover.Trigger>
@@ -230,11 +233,11 @@ export default function Cv() {
                 <Timeline.Indicator bg="green.solid" color="black"></Timeline.Indicator>
               </Timeline.Connector>
               <Timeline.Content>
-                <Timeline.Title>
+                <Timeline.Title mt="2px">
                   Volunteer at Transmogriffen
                                         <Popover.Root>
                         <Popover.Trigger asChild>
-                          <Button size="xs" variant="subtle" rounded="full">
+                          <Button size="2xs" variant="subtle" rounded="full"  mr="0" ml="auto">
                             Read more                          
                           </Button>
                         </Popover.Trigger>
@@ -266,11 +269,11 @@ export default function Cv() {
                 <Timeline.Indicator bg="cyan.solid" color="black"></Timeline.Indicator>
               </Timeline.Connector>
               <Timeline.Content>
-                <Timeline.Title>
+                <Timeline.Title mt="2px">
                   IBM - Senior IT Consultant
                                         <Popover.Root>
                         <Popover.Trigger asChild>
-                          <Button size="xs" variant="subtle" rounded="full">
+                          <Button size="2xs" variant="subtle" rounded="full"  mr="0" ml="auto">
                             Read more                          
                           </Button>
                         </Popover.Trigger>
@@ -302,11 +305,11 @@ export default function Cv() {
                 <Timeline.Indicator bg="cyan.solid" color="black"></Timeline.Indicator>
               </Timeline.Connector>
               <Timeline.Content>
-                <Timeline.Title>
+                <Timeline.Title mt="2px">
                   Nordea - Multiple roles.
                                         <Popover.Root>
                         <Popover.Trigger asChild>
-                          <Button size="xs" variant="subtle" rounded="full">
+                          <Button size="2xs" variant="subtle" rounded="full"  mr="0" ml="auto">
                             Read more                          
                           </Button>
                         </Popover.Trigger>
@@ -338,11 +341,11 @@ export default function Cv() {
                 <Timeline.Indicator bg="red.solid" color="black"></Timeline.Indicator>
               </Timeline.Connector>
               <Timeline.Content>
-                <Timeline.Title>
+                <Timeline.Title mt="2px">
                   CBS - Graduate diploma in Business Administration
                                         <Popover.Root>
                         <Popover.Trigger asChild>
-                          <Button size="xs" variant="subtle" rounded="full">
+                          <Button size="2xs" variant="subtle" rounded="full">
                             Read more                          
                           </Button>
                         </Popover.Trigger>
@@ -367,5 +370,7 @@ export default function Cv() {
 
           </Timeline.Root>
     </Stack>
+    </Center>
+    </Container>
   )
 }
