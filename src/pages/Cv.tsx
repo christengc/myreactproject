@@ -1,4 +1,4 @@
-import { Timeline, Stack, Button, Popover, Portal, Text, Image, Container, Heading, Center, Spacer, Box } from "@chakra-ui/react";
+import { Timeline, Stack, Button, Popover, Portal, Text, Image, Container, Heading, Center } from "@chakra-ui/react";
 
 export default function Cv() {
   return (
