@@ -1,4 +1,6 @@
 import './App.css'
+import './fonts/Gugi-Regular.ttf';
+import './fonts/RubikGlitch-Regular.ttf';
 import { Heading, Link, Flex, List,ListItem, Spacer, Drawer, Portal, CloseButton, Box, Container, Grid, GridItem, Icon, VStack} from "@chakra-ui/react"
 import { Outlet } from "react-router-dom";
 import { MdContactPhone } from "react-icons/md";
@@ -9,8 +11,17 @@ import { GiHamburgerMenu } from "react-icons/gi";
 
 
 const applyFont = {
-  fontFamily: 'Quirky Robot, sans-serif',
-  webkitTextStroke: '2px #fff'
+  fontFamily: 'gugi',
+  WebkitTextStroke: '1px #fff',
+  fontSize: '48px',
+  fontDisplay: 'swap'
+}
+
+const applyFont2 = {
+  fontFamily: 'rubikGlitch',
+  WebkitTextStroke: '1px #fff',
+  fontSize: '36px',
+  fontDisplay: 'swap'
 }
 
 const noBullet = {
@@ -31,9 +42,9 @@ function App() {
     <>
         <Container bg="bg.subtle">
           
-          <Heading bg="yellow.solid" p="1em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" >
+          <Heading bg="yellow.solid/50" p="1em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" >
             <Flex alignContent="flex-center" justify="space-around">
-              <Box as="button" hideFrom="md" m="auto" onClick={handleClick}>
+              <Box hideFrom="md" m="auto" onClick={handleClick}>
               <Drawer.Root size="xs" placement="start">
                 <Drawer.Trigger>
                     <Icon color="white">
@@ -90,17 +101,17 @@ function App() {
                 </Box>
               <Spacer />
               <Box textStyle="4xl" p="10px" style={applyFont}>DIGITAL</Box>
-              <Box alignContent="flex-end" p="10px" pb="12px">Christen</Box>
+              <Box alignContent="flex-end" p="10px" pb="12px" style={applyFont2}>Christen</Box>
               <Spacer />
             </Flex>
           </Heading>
                   
         <Grid templateColumns="minmax(220px, 1fr) 1fr 1fr 1fr 1fr 1fr" gap={4}>
-          <GridItem as="aside" hideBelow="md" colSpan={1} bg="bg.subtle" height="100vh" id="menuNav">
+          <GridItem as="aside" hideBelow="md" colSpan={1} height="100vh" id="menuNav" bg="rgba(0,0,0,0)">
             
-            <Box bg="yellow.solid" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
+            <Box bg="yellow.solid/50" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
             
-              <List.Root bg="yellow.solid" style={noBullet}>
+              <List.Root  style={noBullet}>
                 <ListItem>
                   <Icon as={FaKissWinkHeart} mr="0.5em"></Icon>
                   <Link variant="plain" href="/about" textAlign="left">
@@ -135,7 +146,7 @@ function App() {
             </Box>
 
           </GridItem>
-          <GridItem as="main" colSpan={{ base: 6, md: 5 }} bg="bg.subtle">
+          <GridItem as="main" colSpan={{ base: 6, md: 5 }} bg="rgba(0,0,0,0)">
 
           <Outlet>
 

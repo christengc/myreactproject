@@ -4,7 +4,7 @@ import { FaExternalLinkSquareAlt } from "react-icons/fa";
 
 export default function Projects() {
   return (
-        <Grid templateRows="repeat(6, 1fr)" gap={4} pt="2em">
+        <Grid templateRows="repeat(6, 1fr)" gap={4} pt="2em"bg="rgba(0,0,0,0)">
               <GridItem m="0em 0em" rounded="lg"  mt="auto" mb="auto" maxW={{smDown: "350px"}}>
                 <Card.Root size="sm" bg="cyan.solid"  color="white" flexDirection="row" overflow="hidden" maxW="3xl" ml="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image

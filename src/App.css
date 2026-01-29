@@ -8,5 +8,20 @@
 */
 @font-face {
   font-family: 'Quirky Robot';
-  src: local('MyFont'), url('./fonts/Quirky Robot.otf') format('otf');
+  src: local("Quirky Robot"), url('./fonts/Quirky Robot.otf') format('otf');
+}
+@font-face {
+  font-family: 'gugi';
+  src: local("gugi"), url('./fonts/Gugi-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'rubikGlitch';
+  src: local("rubikGlitch"), url('./fonts/RubikGlitch-Regular.ttf') format('truetype');
+}
+
+.chakra-container {
+  background-image: url(/background1.png) !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  background-attachment: fixed !important;
 }
