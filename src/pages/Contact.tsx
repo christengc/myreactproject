@@ -7,7 +7,7 @@ import { BiMobileVibration } from "react-icons/bi";
 
 export default function Contact() {
   return (
-    <Container mt="2em" bg="cyan.solid" px="2" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
+    <Container className="dropShadow" mt="2em" bg="cyan.solid" px="2" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
      <VStack>
       <Box  ml="0" mr="auto">
         <Fieldset.Root size="lg" maxW="md">

@@ -40,7 +40,7 @@ function App() {
 
   return (
     <>
-        <Container bg="bg.subtle">
+        <Container>
           
           <Heading bg="yellow.solid/50" p="1em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" >
             <Flex alignContent="flex-center" justify="space-around">

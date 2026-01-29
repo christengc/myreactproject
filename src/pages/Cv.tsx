@@ -2,7 +2,7 @@ import { Timeline, Stack, Button, Popover, Portal, Text, Image, Container, Headi
 
 export default function Cv() {
   return (
-        <Container bg="cyan.solid" color="white" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em" pt="2em" pr="auto" pl="auto">
+        <Container className="dropShadow" bg="white" color="blue.solid" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em" pt="2em" pr="auto" pl="auto">
         <Heading as="h2" pb="2em" fontSize="2em" ml="0">Curriculum vitae</Heading>
         <Center>
         <Stack gap="8" pt="2em" pl="1em">

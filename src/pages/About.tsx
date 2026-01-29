@@ -28,16 +28,16 @@ const ItemStyle = {
 export default function About() {
   return (
     <Container fluid>
-      <Box px="2" bg="cyan.solid" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
-        <Center><Heading as="h2" color="white" fontSize="5xl" p="1em">Nice to meet you :)</Heading></Center>
-        <Text maxW="55%" p="0.5em 0em" color="white" fontSize="xl">Since you are here, let me tell you a bit about myself. On this page you can read about my hobbies and my professional interests.</Text>
+      <Box className="dropShadow" bg="white" px="2" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
+        <Center><Heading as="h2" fontSize="5xl" color="cyan.solid" p="1em">Nice to meet you :)</Heading></Center>
+        <Text maxW="55%" color="blue.solid" p="0.5em 0em" fontSize="xl">Since you are here, let me tell you a bit about myself. On this page you can read about my hobbies and my professional interests.</Text>
 
         <Flex justify="flex-end" pr="0.5em" mt="-9em"><Image borderRadius="full" fit="cover" w="25%" minW="8em" padding="0.5em" src="/christen.jpg" alt="react" /></Flex>
         </Box>
-      <Box px="2" bg="orange.200" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
+      <Box className="dropShadow" bg="white" color="blue.solid" px="2" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
          <Heading as="h3" size="2xl">It all started with HTML 4.01 and Helena Christensen</Heading>
          <br/>
-         <Text maxW="37em" p="0.5em 0em" color="Black" fontSize="md">
+         <Text maxW="37em" p="0.5em 0em" fontSize="md">
           I developed my first webpage in 1998, when I was 15 years old approximatly when the HTML 4.01 specification was released. You can still find the page on Way Back Machine here:  
           <Link color="Black" target="_blank" href="https://web.archive.org/web/20030402184329/http://home0.inet.tele.dk/Christen/" m="0em 1em">
            The Greatest Tribute to Helena Christensen <FaExternalLinkSquareAlt  />
@@ -58,8 +58,8 @@ export default function About() {
           <Link href="https://www.youtube.com/watch?v=I02Dh1zemuM" target="_blank" color="Black" m="0em 1em">demo on youtube <FaExternalLinkSquareAlt  /></Link>
           </Text>
       </Box>
-      <Box px="2" bg="cyan.solid" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
-        <Heading as="h3" color="white"size="2xl">What i like to do in my sparetime</Heading>
+      <Box className="dropShadow" bg="white" color="blue.solid" px="2" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
+        <Heading as="h3" size="2xl">What i like to do in my sparetime</Heading>
         <Grid templateRows="repeat(2, 1fr)"   
               templateColumns={{
               base: "1fr",

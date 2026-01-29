@@ -1,11 +1,4 @@
-/*#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-  position: relative;
-}
-*/
+
 @font-face {
   font-family: 'Quirky Robot';
   src: local("Quirky Robot"), url('./fonts/Quirky Robot.otf') format('otf');
@@ -19,9 +12,13 @@
   src: local("rubikGlitch"), url('./fonts/RubikGlitch-Regular.ttf') format('truetype');
 }
 
-.chakra-container {
+body {
   background-image: url(/background1.png) !important;
   background-repeat: no-repeat !important;
   background-size: cover !important;
   background-attachment: fixed !important;
+}
+
+.dropShadow {
+box-shadow: 0px 20px 48px -12px rgba(00,00,00,0.8);
 }
