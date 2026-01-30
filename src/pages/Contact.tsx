@@ -7,38 +7,38 @@ import { BiMobileVibration } from "react-icons/bi";
 
 export default function Contact() {
   return (
-    <Container className="dropShadow" mt="2em" bg="cyan.solid" px="2" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
+    <Container className="dropShadow" mt="2em" bg="white" px="2" p="2em" borderRadius="8px" m="2em 0em">
      <VStack>
       <Box  ml="0" mr="auto">
         <Fieldset.Root size="lg" maxW="md">
           
           <Stack>
-            <Fieldset.Legend fontSize="2em" color="white" pb="1em">Drop a message</Fieldset.Legend>
+            <Fieldset.Legend   as="h2" pb="2em" fontSize="1.5em" color="#2B4570">Drop a message</Fieldset.Legend>
             <Fieldset.HelperText>
-              <Text color="white" fontSize="1.5em">I love to hear from you. Maybe you have a questions? or are interested in collaborating ? or something I didnt even think of :) please surprise me :)</Text>
+              <Text color="#2B4570" fontSize="1.5em">I love to hear from you. Maybe you have a questions? or are interested in collaborating ? or something I didnt even think of :) please surprise me :)</Text>
             </Fieldset.HelperText>
           </Stack>
 
-          <Fieldset.Content>
+          <Fieldset.Content color="#2B4570" >
 
             <Field.Root>
-              <Field.Label color="white">Name</Field.Label>
+              <Field.Label >Name</Field.Label>
               <Input bg="white" name="name" placeholder="Your full name here" />
             </Field.Root>
 
             <Field.Root>
-              <Field.Label color="white">Email address</Field.Label>
+              <Field.Label >Email address</Field.Label>
               <Input bg="white" name="email" type="email" placeholder="mymail@provider.com"/>
             </Field.Root>
 
             <Field.Root>
-              <Field.Label color="white">Message</Field.Label>
+              <Field.Label >Message</Field.Label>
               <Textarea bg="white" variant="outline" placeholder="Spill the beans..." />
             </Field.Root>
 
           </Fieldset.Content>
 
-          <Button type="submit" alignSelf="flex-start">
+          <Button bg="#FE4A49" type="submit" alignSelf="flex-start">
             Send Message
           </Button>
         </Fieldset.Root>
@@ -46,18 +46,18 @@ export default function Contact() {
       <Box width="100%" pt="5em">
               <Stack direction={{ lgDown: "column"}}>
                 <Flex>
-                  <Icon color="black.solid"><MdOutlineEmail size="2em"/></Icon>
-                  <Text color="white" display="inline" alignContent="center" pl="0.5em">christenchristensen@live.dk</Text>
+                  <Icon color="#2B4570"><MdOutlineEmail size="2em"/></Icon>
+                  <Text color="#2B4570" display="inline" alignContent="center" pl="0.5em">christenchristensen@live.dk</Text>
                 </Flex>
                 <Spacer />
                 <Flex>
-                  <Icon><BiMobileVibration size="2em"/></Icon>
+                  <Icon><BiMobileVibration size="2em" color="#2B4570"/></Icon>
                   <Image height="2em" display="inline" src="/Uden titel.png" pl="0.5em"></Image>
                 </Flex>
                 <Spacer />
                 <Flex>
-                  <Icon color="black.solid"><ImLinkedin size="2em"/></Icon>
-                  <Link alignContent="center" color="white" href="https://www.linkedin.com/in/christen-g-christensen/>" target="_blank" ml="0.5em">LinkedIn</Link>
+                  <Icon color="#2B4570"><ImLinkedin size="2em"/></Icon>
+                  <Link alignContent="center" color="wh#2B4570ite" href="https://www.linkedin.com/in/christen-g-christensen/>" target="_blank" ml="0.5em">LinkedIn</Link>
                 </Flex>
               </Stack>
       </Box>

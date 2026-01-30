@@ -2,8 +2,8 @@ import { Timeline, Stack, Button, Popover, Portal, Text, Image, Container, Headi
 
 export default function Cv() {
   return (
-        <Container className="dropShadow" bg="white" color="blue.solid" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em" pt="2em" pr="auto" pl="auto">
-        <Heading as="h2" pb="2em" fontSize="2em" ml="0">Curriculum vitae</Heading>
+        <Container className="dropShadow" bg="white" color="#2B4570" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em" pt="2em" pr="auto" pl="auto">
+        <Heading as="h2" pb="2em" size="2xl">Curriculum vitae</Heading>
         <Center>
         <Stack gap="8" pt="2em" pl="1em">
           <Timeline.Root size="xl">
