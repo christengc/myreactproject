@@ -35,7 +35,7 @@ export default function About() {
         <Flex justify="flex-end" pr="0.5em" mt="-9em"><Image borderRadius="full" fit="cover" w="25%" minW="8em" padding="0.5em" src="/christen.jpg" alt="react" /></Flex>
         </Box>
       <Box className="dropShadow" bg="white" color="#2B4570" px="2" p="2em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
-         <Heading as="h" size="2xl">It all started with HTML 4.01 and Helena Christensen</Heading>
+         <Heading as="h2" size="2xl">It all started with HTML 4.01 and Helena Christensen</Heading>
          <br/>
          <Text maxW="37em" p="0.5em 0em" fontSize="md">
           I developed my first webpage in 1998, when I was 15 years old approximatly when the HTML 4.01 specification was released. You can still find the page on Way Back Machine here:  
