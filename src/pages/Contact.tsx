@@ -3,17 +3,20 @@ import { MdOutlineEmail } from "react-icons/md";
 import { ImLinkedin } from "react-icons/im";
 import { BiMobileVibration } from "react-icons/bi";
 
-
+const fontLuckiestGuy = {
+  fontFamily: 'LuckiestGuy'
+}
 
 export default function Contact() {
   return (
-    <Container className="dropShadow" mt="2em" bg="white" px="2" p="2em" borderRadius="8px" m="2em 0em">
+    <Container>
+     <Box className="dropShadow">
      <VStack>
       <Box  ml="0" mr="auto">
         <Fieldset.Root size="lg" maxW="md">
           
           <Stack>
-            <Fieldset.Legend   as="h2" pb="2em" fontSize="1.5em" color="#2B4570">Drop a message</Fieldset.Legend>
+            <Fieldset.Legend   as="h2" pb="2em" fontSize="1.5em" color="#2B4570" style={fontLuckiestGuy}>Drop a message</Fieldset.Legend>
             <Fieldset.HelperText>
               <Text color="#2B4570" fontSize="1.5em">I love to hear from you. Maybe you have a questions? or are interested in collaborating ? or something I didnt even think of :) please surprise me :)</Text>
             </Fieldset.HelperText>
@@ -38,7 +41,7 @@ export default function Contact() {
 
           </Fieldset.Content>
 
-          <Button bg="#FE4A49" type="submit" alignSelf="flex-start">
+          <Button bg="#2AB7CA" type="submit" alignSelf="flex-start">
             Send Message
           </Button>
         </Fieldset.Root>
@@ -62,6 +65,7 @@ export default function Contact() {
               </Stack>
       </Box>
     </VStack>
+    </Box>
     </Container>
   )
 }

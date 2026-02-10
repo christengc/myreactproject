@@ -12,13 +12,52 @@
   src: local("rubikGlitch"), url('./fonts/RubikGlitch-Regular.ttf') format('truetype');
 }
 
+@font-face {
+  font-family: 'luckiestGuy';
+  src: local("luckiestGuy"), url('./fonts/LuckiestGuy-Regular.ttf') format('truetype');
+}
+
 body {
-  background-image: url(/background1.png) !important;
+  background-image: url(/background2.png) !important;
   background-repeat: no-repeat !important;
   background-size: cover !important;
   background-attachment: fixed !important;
 }
 
-.dropShadow {
-box-shadow: 0px 20px 48px -12px rgba(00,00,00,0.8);
+@media only screen and (width <= 767px) {
+    .dropShadow {
+    box-shadow: 0px 20px 48px -12px rgba(00,00,00,0.8);
+    background-color: white;
+    padding: 4em;
+    border-color: #2B4570;
+    color: #2B4570;
+    border-width: 2px;
+    border-radius: 8px;
+    margin: 2em 0em;
+  }
 }
+
+@media only screen and (width >= 767px) {
+    .dropShadow {
+    box-shadow: 0px 20px 48px -12px rgba(00,00,00,0.8);
+    background-color: white;
+    padding: 4em;
+    border-color: #2B4570;
+    color: #2B4570;
+    border-width: 2px;
+    border-radius: 8px;
+    margin: 2em 2em;
+  }
+}
+
+@media only screen and (width <= 850px) and (width >= 768px) {
+    .chakra-card__root.dropShadow {
+      max-width: 450px !Important;
+  }
+}
+
+
+a {
+  text-decoration-line: underline;
+}
+
