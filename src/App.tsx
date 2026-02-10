@@ -103,7 +103,7 @@ function App() {
               <Box textStyle="4xl"  mt="auto" mb="auto" ml="0.5em"  fontSize={{sm: "1.5em", md: "2.5em" }} fontWeight="100" style={applyFont}>DIGITAL</Box>
               <Box alignContent="flex-end"  mt="auto" mb="auto" ml="0.5em"  fontSize={{sm: "1.5em", md: "2em" }} fontWeight="100" color="#2B4570" style={applyFont2}>Christen</Box>
               <Spacer />
-              <Image src="/logo.png" mt="auto" mb="auto" mr={{sm: "0em" , md: "1em"}} width={{sm: "3em" , md: "4em"}} height={{sm: "3em" , md: "4em"}} borderRadius="2em" bg="#2B4570"></Image>
+              <Image src="/logo.png" mt="auto" mb="auto" mr={{sm: "0em" , md: "1em"}} width={{base: "3em", sm: "3em" , md: "4em"}} height={{base: "3em", sm: "3em" , md: "4em"}} borderRadius="2em" bg="#2B4570"></Image>
             </Flex>
           </Heading>
                   
