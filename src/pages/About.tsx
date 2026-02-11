@@ -45,10 +45,10 @@ export default function About() {
   return (
     <Container>
       <Box className="dropShadow">
-        <Heading as="h2" fontSize="5xl" color="cyan.solid" pb="1em" style={fontLuckiestGuy}>Nice to meet you :)</Heading>
+        <Heading as="h2" fontSize="5xl" lineHeight="1.2" color="cyan.solid" pb="1em" style={fontLuckiestGuy}>Nice to meet you :)</Heading>
         <Text maxW="55%" color="#2B4570" p="0.5em 0em" fontSize="xl">Since you are here, let me tell you a bit about myself. On this page you can read about my hobbies and my professional interests.</Text>
 
-        <Flex justify="flex-end" pr="0.5em" mt="-9em"><Image borderRadius="full" fit="cover" w="25%" minW="8em" padding="0.5em" src="/christen.jpg" alt="react" /></Flex>
+        <Flex justify="flex-end" mt="-9em"><Image borderRadius="full" fit="cover" w="25%" minW={{base: "6em", sm: "6em", md: "8em" }} mr="-1em" src="/christen.jpg" alt="react" /></Flex>
         </Box>
       <Box className="dropShadow">
          <Heading style={fontLuckiestGuy} as="h2" size="2xl">It all started with HTML 4.01 and Helena Christensen</Heading>
