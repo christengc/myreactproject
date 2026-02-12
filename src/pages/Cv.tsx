@@ -15,7 +15,7 @@ export default function Cv() {
 
             <Timeline.Item height="9em" >
               <Timeline.Content width="auto">
-                <Timeline.Title whiteSpace="nowrap" fontFamily={ "'Courier New', monospace" } fontWeight={600} >2002 - 2003</Timeline.Title>
+                <Timeline.Title whiteSpace="nowrap" fontWeight={700} >2002 - 2003</Timeline.Title>
               </Timeline.Content>
               <Timeline.Connector>
                 <Timeline.Separator borderWidth={2} />
@@ -51,7 +51,7 @@ export default function Cv() {
 
             <Timeline.Item height="9em" >
               <Timeline.Content width="auto">
-                <Timeline.Title whiteSpace="nowrap" fontFamily={ "'Courier New', monospace" } fontWeight={600}>2004 - 2008</Timeline.Title>
+                <Timeline.Title whiteSpace="nowrap" fontWeight={700}>2004 - 2008</Timeline.Title>
               </Timeline.Content>
               <Timeline.Connector>
                 <Timeline.Separator borderWidth={2}/>
@@ -96,7 +96,7 @@ export default function Cv() {
 
              <Timeline.Item height="9em" >
               <Timeline.Content width="auto">
-                <Timeline.Title whiteSpace="nowrap" fontFamily={ "'Courier New', monospace" } fontWeight={600}>2008 - 2009</Timeline.Title>
+                <Timeline.Title whiteSpace="nowrap" fontWeight={700}>2008 - 2009</Timeline.Title>
               </Timeline.Content>
               <Timeline.Connector>
                 <Timeline.Separator borderWidth={2}/>
@@ -134,7 +134,7 @@ I taught both at primary and high school level. A large part of the job was to m
 
              <Timeline.Item height="9em" >
               <Timeline.Content width="auto">
-                <Timeline.Title whiteSpace="nowrap" fontFamily={ "'Courier New', monospace" } fontWeight={600}>2008 - 2010</Timeline.Title>
+                <Timeline.Title whiteSpace="nowrap" fontWeight={700}>2008 - 2010</Timeline.Title>
               </Timeline.Content>
               <Timeline.Connector>
                 <Timeline.Separator borderWidth={2}/>
@@ -173,7 +173,7 @@ Conducted performance tests and user communication. Technical focus was on signa
 
             <Timeline.Item height="9em" >
               <Timeline.Content width="auto">
-                <Timeline.Title whiteSpace="nowrap" fontFamily={ "'Courier New', monospace" } fontWeight={600}>2010 - 2013</Timeline.Title>
+                <Timeline.Title whiteSpace="nowrap" fontWeight={700}>2010 - 2013</Timeline.Title>
               </Timeline.Content>
               <Timeline.Connector>
                 <Timeline.Separator borderWidth={2}/>
@@ -211,7 +211,7 @@ Master project: Social media volunteering application http://www2.imm.dtu.dk/pub
 
             <Timeline.Item height="9em" >
               <Timeline.Content width="auto">
-                <Timeline.Title whiteSpace="nowrap" fontFamily={ "'Courier New', monospace" } fontWeight={600}>2011 -  2013</Timeline.Title>
+                <Timeline.Title whiteSpace="nowrap" fontWeight={700}>2011 -  2013</Timeline.Title>
               </Timeline.Content>
               <Timeline.Connector>
                 <Timeline.Separator borderWidth={2}/>
@@ -247,7 +247,7 @@ Master project: Social media volunteering application http://www2.imm.dtu.dk/pub
 
             <Timeline.Item height="9em" >
               <Timeline.Content width="auto">
-                <Timeline.Title whiteSpace="nowrap" fontFamily={ "'Courier New', monospace" } fontWeight={600}>2011 - 2014</Timeline.Title>
+                <Timeline.Title whiteSpace="nowrap" fontWeight={700}>2011 - 2014</Timeline.Title>
               </Timeline.Content>
               <Timeline.Connector>
                 <Timeline.Separator borderWidth={2}/>
@@ -283,7 +283,7 @@ Master project: Social media volunteering application http://www2.imm.dtu.dk/pub
 
             <Timeline.Item height="9em" >
               <Timeline.Content width="auto">
-                <Timeline.Title whiteSpace="nowrap" fontFamily={ "'Courier New', monospace" } fontWeight={600}>2013 -  2016</Timeline.Title>
+                <Timeline.Title whiteSpace="nowrap" fontWeight={700}>2013 -  2016</Timeline.Title>
               </Timeline.Content>
               <Timeline.Connector>
                 <Timeline.Separator borderWidth={2}/>
@@ -319,7 +319,7 @@ Master project: Social media volunteering application http://www2.imm.dtu.dk/pub
 
             <Timeline.Item height="9em" >
               <Timeline.Content width="auto">
-                <Timeline.Title whiteSpace="nowrap" fontFamily={ "'Courier New', monospace" } fontWeight={600}>2016 - xxxx </Timeline.Title>
+                <Timeline.Title whiteSpace="nowrap" fontWeight={700}>2016 - xxxx </Timeline.Title>
               </Timeline.Content>
               <Timeline.Connector>
                 <Timeline.Separator borderWidth={2}/>
@@ -355,7 +355,7 @@ Master project: Social media volunteering application http://www2.imm.dtu.dk/pub
 
             <Timeline.Item height="9em" >
               <Timeline.Content width="auto">
-                <Timeline.Title whiteSpace="nowrap" fontFamily={ "'Courier New', monospace" } fontWeight={600}>2017 - 2019</Timeline.Title>
+                <Timeline.Title whiteSpace="nowrap" fontWeight={700}>2017 - 2019</Timeline.Title>
               </Timeline.Content>
               <Timeline.Connector>
                 <Timeline.Separator borderWidth={2}/>

@@ -82,50 +82,53 @@ export default function About() {
               md: "repeat(2, 1fr)",
               lg: "repeat(3, 1fr)",
               xl: "repeat(4, 1fr)"}} 
-              gap={1} mt="2em">
+              gap={1}
+              mt="2em"
+              justifyContent="center">
             <GridItem>
-              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+              <Box justifySelf="center" style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
                 <Center style={ItemTextStyle} >Tennis</Center>
                 <Center mt="0em" padding="1em"><Icon color="#2B4570"><IoIosTennisball background-color="black" size="3em"/></Icon></Center>
               </Box>
             </GridItem>
             <GridItem >
-              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+              <Box justifySelf="center" style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
                 <Center style={ItemTextStyle} >Swimming</Center>
                 <Center mt="0em" padding="1em"><Icon color="#2B4570"><FaPersonSwimming size="3em"/></Icon></Center>
               </Box>
             </GridItem>
-            <GridItem><Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+            <GridItem>
+              <Box justifySelf="center" style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
                 <Center style={ItemTextStyle} >Roller skating</Center>
                 <Center mt="0em" padding="1em"><Icon color="#2B4570"><MdRollerSkating size="3em"/></Icon></Center>
               </Box>
             </GridItem>
             <GridItem>
-              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+              <Box justifySelf="center" style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
                 <Center style={ItemTextStyle} >Computers</Center>
                 <Center mt="0em" padding="1em"><Icon color="#2B4570"><FaComputer size="3em"/></Icon></Center>
               </Box>
             </GridItem>
             <GridItem>
-              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+              <Box justifySelf="center" style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
                 <Center style={ItemTextStyle} >Family</Center>
                 <Center mt="0em" padding="1em"><Icon color="#2B4570"><MdOutlineFamilyRestroom size="3em"/></Icon></Center>
               </Box>
             </GridItem>
             <GridItem>
-              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+              <Box justifySelf="center" style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
                 <Center style={ItemTextStyle} >DIY</Center>
                 <Center mt="0em" padding="1em"><Icon color="#2B4570"><GiHammerNails size="3em"/></Icon></Center>
               </Box>
             </GridItem>
             <GridItem>
-              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+              <Box justifySelf="center" style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
                 <Center style={ItemTextStyle} >Chess</Center>
                 <Center mt="0em" padding="1em"><Icon color="#2B4570" height="100%"><FaChessBoard  size="3em" /></Icon></Center>
               </Box>
             </GridItem>
                         <GridItem>
-              <Box style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
+              <Box justifySelf="center" style={ItemStyle} _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out" rounded="lg">
                 <Center style={ItemTextStyle} >Wedight lifting</Center>
                 <Center mt="0em" padding="1em"><Icon color="#2B4570" height="100%"><GiWeightLiftingUp size="3em"/></Icon></Center>
               </Box>

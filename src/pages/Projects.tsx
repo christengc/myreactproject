@@ -8,7 +8,7 @@ const fontLuckiestGuy = {
 export default function Projects() {
   return (
         <Grid templateRows="repeat(6, 1fr)" pt="2em"bg="rgba(0,0,0,0)">
-              <GridItem rounded="lg" maxW={{smDown: "350px"}}>
+              <GridItem justifySelf={{smDown: "center"}} rounded="lg" maxW={{smDown: "350px"}}>
                 <Card.Root className="dropShadow" p="0em" mt="0" mb="4em" size="sm" flexDirection="row" overflow="hidden" maxW="3xl" ml="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image
                     hideBelow="md"
@@ -32,7 +32,7 @@ export default function Projects() {
                   </Box>
                 </Card.Root>
               </GridItem>
-              <GridItem rounded="lg" maxW={{smDown: "350px"}} >
+              <GridItem justifySelf={{smDown: "center"}} rounded="lg" maxW={{smDown: "350px"}} >
                 <Card.Root className="dropShadow" p="0em" mt="0" mb="4em"  bg="#2B4570"  color="white" flexDirection="row" overflow="hidden" maxW="3xl" mr="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image
                     hideBelow="md"
@@ -55,7 +55,7 @@ export default function Projects() {
                   </Box>
                 </Card.Root>
               </GridItem>
-              <GridItem rounded="lg" maxW={{smDown: "350px"}}>
+              <GridItem justifySelf={{smDown: "center"}} rounded="lg" maxW={{smDown: "350px"}}>
                 <Card.Root className="dropShadow" p="0em" mt="0" mb="4em" bg="white"  color="#2B4570" flexDirection="row" overflow="hidden" maxW="3xl" ml="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image
                     hideBelow="md"
@@ -84,7 +84,7 @@ export default function Projects() {
                   </Box>
                 </Card.Root>
               </GridItem>
-              <GridItem rounded="lg" maxW={{smDown: "350px"}}>
+              <GridItem justifySelf={{smDown: "center"}} rounded="lg" maxW={{smDown: "350px"}}>
                 <Card.Root className="dropShadow" p="0em" mt="0" mb="4em" bg="cyan.solid"  color="white" flexDirection="row" overflow="hidden" maxW="3xl" mr="auto" _hover={{ boxShadow: "lg" , transform: "scale(1.02)"}} transition="all 0.3s ease-in-out">
                   <Image
                     hideBelow="md"
