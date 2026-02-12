@@ -47,7 +47,7 @@ function App() {
               <Box hideFrom="md" m="auto" onClick={handleClick}>
               <Drawer.Root size="xs" placement="start">
                 <Drawer.Trigger>
-                    <Icon color="white">
+                    <Icon color="#2B4570">
                       <GiHamburgerMenu size="2em"/>
                     </Icon>
                 </Drawer.Trigger>
