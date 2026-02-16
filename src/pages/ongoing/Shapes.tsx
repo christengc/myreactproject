@@ -353,7 +353,7 @@ export default function Shapes() {
             <Box className="dropShadow">
                 <HStack justifyItems="center" mb="1em">
                 <Button asChild variant="outline" size="xs" rounded="full" colorPalette="teal" color="#2B4570">
-                    <a href="./"><Icon color="cyan.solid" size="2xl"><TiArrowBack /></Icon></a>
+                    <a href="/ongoing"><Icon color="cyan.solid" size="2xl"><TiArrowBack /></Icon></a>
                 </Button>
                 <Heading as="h2" size="2xl" style={fontLuckiestGuy} ml="0.5em">Shape Project</Heading>
                 </HStack>
