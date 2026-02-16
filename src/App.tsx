@@ -41,7 +41,6 @@ function App() {
   return (
     <>
         <Container>
-          
           <Heading bg="yellow.solid/50" p="1em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" >
             <Flex alignContent="flex-center" justify="space-around">
               <Box hideFrom="md" m="auto" onClick={handleClick}>
@@ -110,7 +109,7 @@ function App() {
         <Grid templateColumns="minmax(220px, 1fr) 1fr 1fr 1fr 1fr 1fr" gap={4}>
           <GridItem as="aside" hideBelow="md" colSpan={1} height="100vh" id="menuNav" bg="rgba(0,0,0,0)">
             
-            <Box bg="yellow.solid/50" p="1.5em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="2em 0em">
+            <Box bg="yellow.solid/50" p="1.5em" borderColor="gray.300" borderWidth="2px" borderRadius="8px" m="3em 0em">
             
               <List.Root  style={noBullet}>
                 <ListItem mb="1em"  pt="1em">

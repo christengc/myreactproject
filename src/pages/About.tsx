@@ -1,4 +1,4 @@
-import { Box, Center, Container, Heading, Flex,Link, Text, Image, GridItem, Grid, Icon } from "@chakra-ui/react";
+import { Box, Center, Container, Carousel, IconButton, Heading, Flex,Link, Text, Image, GridItem, Grid, Icon } from "@chakra-ui/react";
 import { IoIosTennisball  } from 'react-icons/io';
 import { FaPersonSwimming } from "react-icons/fa6";
 import { MdRollerSkating } from "react-icons/md";
@@ -8,9 +8,29 @@ import { GiHammerNails } from "react-icons/gi";
 import { FaExternalLinkSquareAlt } from "react-icons/fa";
 import { FaChessBoard } from "react-icons/fa6";
 import { GiWeightLiftingUp } from "react-icons/gi";
+import { FaChevronLeft } from "react-icons/fa";
+import { FaChevronRight } from "react-icons/fa";
 
 
 
+const items = [
+  {
+    label: "Mountain Landscape",
+    url: "/familie2.jpg",
+  },
+  {
+    label: "Forest Path",
+    url: "/familie1.jpg",
+  },
+  {
+    label: "Ocean Waves",
+    url: "/familie3.jpg",
+  },
+  {
+    label: "Desert Dunes",
+    url: "/familie4.jpg",
+  }
+]
 
 
 
@@ -51,7 +71,7 @@ export default function About() {
         <Flex justify="flex-end" mt="-9em"><Image borderRadius="full" fit="cover" w="25%" minW={{base: "6em", sm: "6em", md: "8em" }} mr="-1em" src="/christen.jpg" alt="react" /></Flex>
         </Box>
       <Box className="dropShadow">
-         <Heading style={fontLuckiestGuy} as="h2" size="2xl">It all started with HTML 4.01 and Helena Christensen</Heading>
+         <Heading style={fontLuckiestGuy} as="h2" size="2xl">It all started with HTML 4.01 and it was Helena Christensen who sparked my technical interest</Heading>
          <br/>
          <Text maxW="37em" p="0.5em 0em" fontSize="md">
           I developed my first webpage in 1998, when I was 15 years old approximatly when the HTML 4.01 specification was released. You can still find the page on Way Back Machine here:  
@@ -73,6 +93,63 @@ export default function About() {
           <Link color="#2B4570" href="https://web.archive.org/web/20180808002923/http://watchandspin.com/" target="_blank" m="0em 1em">www.watchandspin.com <FaExternalLinkSquareAlt  /></Link>
           <Link color="#2B4570" href="https://www.youtube.com/watch?v=I02Dh1zemuM" target="_blank" m="0em 1em">demo on youtube <FaExternalLinkSquareAlt  /></Link>
           </Text>
+      </Box>
+      <Box className="dropShadow">
+      <Heading as="h3" size="2xl" style={fontLuckiestGuy} mb="2em">Meet my family</Heading>
+      <Center>
+        <Carousel.Root slideCount={items.length} maxW="2xl" gap="4">
+          <Carousel.Control justifyContent="center" gap="4" width="full">
+            <Carousel.PrevTrigger asChild>
+              <IconButton size="xs" variant="outline">
+                <FaChevronLeft />
+              </IconButton>
+            </Carousel.PrevTrigger>
+
+            <Carousel.ItemGroup width="full">
+              {items.map((item, index) => (
+                <Carousel.Item key={index} index={index}>
+                  <Image
+                    aspectRatio="11/12"
+                    src={item.url}
+                    alt={item.label}
+                    w="100%"
+                    h="100%"
+                    objectFit="cover"
+                  />
+                </Carousel.Item>
+              ))}
+            </Carousel.ItemGroup>
+
+            <Carousel.NextTrigger asChild>
+              <IconButton size="xs" variant="outline">
+                <FaChevronRight />
+              </IconButton>
+            </Carousel.NextTrigger>
+          </Carousel.Control>
+
+          <Carousel.IndicatorGroup>
+            {items.map((item, index) => (
+              <Carousel.Indicator
+                key={index}
+                index={index}
+                unstyled
+                _current={{
+                  outline: "2px solid currentColor",
+                  outlineOffset: "2px",
+                }}
+              >
+                <Image
+                  w="20"
+                  aspectRatio="16/9"
+                  src={item.url}
+                  alt={item.label}
+                  objectFit="cover"
+                />
+              </Carousel.Indicator>
+            ))}
+          </Carousel.IndicatorGroup>
+        </Carousel.Root>
+        </Center>
       </Box>
       <Box className="dropShadow">
         <Heading as="h3" size="2xl" style={fontLuckiestGuy}>What i like to do in my sparetime</Heading>
