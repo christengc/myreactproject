@@ -23,7 +23,7 @@ export default function Projects() {
 
                       <Heading  as="h2" pb="2em" size="2xl" style={fontLuckiestGuy}>Nordea Netbank</Heading>
                       <Card.Description  color="#2B4570">
-                        Nordic Netbank project, to develop a completely new web and mobile bank. With a strong focus on design, usability and security. Initially based on Angular components but over time Nordea developed their own design framework. You can get an overview of the netbank on below youtube video. My contribution have been both hands on frontend development, ux designs, agile support as scrum master and business priority as product owner.
+                        The Nordic Netbank project aimed to develop a completely new web and mobile bank, with a strong focus on design, usability, and security. It was initially based on Angular components, but over time Nordea developed its own design framework. You can get an overview of the netbank in the YouTube video below. My contributions have included hands-on frontend development, UX design, agile support as a Scrum Master, and business prioritization as a Product Owner.
                         <Link color="#2B4570" m="0em 1em" href="https://www.youtube.com/watch?v=cnQjPIU2grQ" target="_blank">Presentation of Nordea (Business) Netbank<FaExternalLinkSquareAlt  /></Link>
                       </Card.Description>
                     </Card.Body>
@@ -45,8 +45,7 @@ export default function Projects() {
                     <Card.Body m="3em">
                       <Heading  as="h2" pb="2em" size="2xl" style={fontLuckiestGuy}>IKEA Project</Heading>
                       <Card.Description  color="white">
-                        International IT project to develop a new Web shop as well as infastructure for IKEA.
-                        My Role was as defect mangager and user interface developer. During my time as a developer I worked mainly on the check out flow where we used vanilla object oriented javascript to write the frontend. The webpage has of course evolved since but is still true to the original concept so visit Ikea to get an idea of what I was part of developing.
+                        International IT project to develop a new webshop as well as infrastructure for IKEA. My role was Defect Manager and User Interface Developer. During my time as a developer, I worked mainly on the checkout flow, where we used vanilla, object-oriented JavaScript to build the frontend. The website has, of course, evolved since then, but it remains true to the original concept. Visit IKEA to get an idea of what I was part of developing.
                         <Link color="white" m="0em 1em" href="https://www.ikea.com/gb/en/shoppingcart/" target="_blank">IKEA check out flow<FaExternalLinkSquareAlt  /></Link>
                       </Card.Description>
                     </Card.Body>
@@ -68,15 +67,15 @@ export default function Projects() {
                   <Box>
                     <Card.Body m="3em">
                       <Heading  as="h2" pb="2em" size="2xl" style={fontLuckiestGuy}>Smartwatch app and CMS website (personal project)</Heading>
-                      <Card.Description  color="#2B4570">
-                       A smartwatch app and a "CMS" site where you can configure your own quiz for your smartwatch. It was based on Java, PHP (Laravel), HTML5, semantic UI, SQL. The site is no longer online but can be found on Way back machine here: 
+                      <Card.Description>
+                      A smartwatch app and a CMS site where users could configure their own quizzes for their smartwatch. It was built using Java, PHP (Laravel), HTML5, Semantic UI, and SQL. The site is no longer online, but it can be found on the Wayback Machine here:
                        <Link color="#2B4570" href="https://web.archive.org/web/20180808002923/http://watchandspin.com/  " target="_blank" p="0em 1em">www.watchandspin.com <FaExternalLinkSquareAlt  /></Link>
-                       or if you would like to view a video demonstration of the website and app its here:
+                       If you would like to view a video demonstration of the website and app, you can find it here:
                        <Link color="#2B4570" href="https://www.youtube.com/watch?v=I02Dh1zemuM" target="_blank" p="0em 1em">demo on youtube <FaExternalLinkSquareAlt  /></Link>
-                       If you would like to see the code there is a link for the web repository here:
+                       If you would like to see the code, there is a link to the web repository here:
                        <Link color="#2B4570" href="https://github.com/christengc/www" target="_blank" p="0em 1em">Watchandspin website repository <FaExternalLinkSquareAlt  /></Link>
                        and the app repository here:
-                        <Link color="#2B4570" href="https://github.com/christengc/Watch-IT-android-app" target="_blank" p="0em 1em">Watchandspin android app repository <FaExternalLinkSquareAlt  /></Link>
+                        <Link color="#2B4570" href="https://github.com/christengc/Watch-IT-android-app" target="_blank" p="0em 1em">Watchandspin Android app repository <FaExternalLinkSquareAlt  /></Link>
                       </Card.Description>
                     </Card.Body>
                     <Card.Footer>
@@ -96,7 +95,7 @@ export default function Projects() {
                     <Card.Body m="3em">
                       <Heading  as="h2" pb="2em" size="2xl" style={fontLuckiestGuy}>Micro Volunteering App (master project)</Heading>
                       <Card.Description  color="white">
-                        In 2013 I developed a HTML5 application for web and mobile called "Sammenspil.dk" it was based on Jquery, PHP, MySQL. Where people could volunteer or get help for accomplishing micro tasks.
+                        In 2013, I developed an HTML5 application for web and mobile called “Sammenspil.dk.” It was built using jQuery, PHP, and MySQL, where people could volunteer or get help accomplishing microtasks.
                         <Link target="_blank" color="white" p="0em 1em" href="https://www2.imm.dtu.dk/pubdb/edoc/imm6558.pdf">Social Media Volunteering Application<FaExternalLinkSquareAlt/></Link>
                       </Card.Description>
                     </Card.Body>

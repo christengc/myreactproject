@@ -18,7 +18,7 @@ export default function Contact() {
           <Stack>
             <Fieldset.Legend   as="h2" pb="2em" fontSize="1.5em" color="#2B4570" style={fontLuckiestGuy}>Drop a message</Fieldset.Legend>
             <Fieldset.HelperText>
-              <Text color="#2B4570" fontSize="1.5em">I love to hear from you. Maybe you have a questions? or are interested in collaborating ? or something I didnt even think of :) please surprise me :)</Text>
+              <Text color="#2B4570" fontSize="1.5em">I’d love to hear from you. Maybe you have a question? Or are interested in collaborating? Or something I didn’t even think of :) Please surprise me.</Text>
             </Fieldset.HelperText>
           </Stack>
 

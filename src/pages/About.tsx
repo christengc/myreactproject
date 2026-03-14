@@ -66,7 +66,7 @@ export default function About() {
     <Container>
       <Box className="dropShadow">
         <Heading as="h2" fontSize="5xl" lineHeight="1.2" color="cyan.solid" pb="1em" style={fontLuckiestGuy}>Nice to meet you :)</Heading>
-        <Text maxW="55%" color="#2B4570" p="0.5em 0em" fontSize="xl">Since you are here, let me tell you a bit about myself. On this page you can read about my hobbies and my professional interests.</Text>
+        <Text maxW="55%" color="#2B4570" p="0.5em 0em" fontSize="xl">Since you're here, let me tell you a bit about myself. On this page, you can read about my hobbies and professional interests.</Text>
 
         <Flex justify="flex-end" mt="-9em"><Image borderRadius="full" fit="cover" w="25%" minW={{base: "6em", sm: "6em", md: "8em" }} mr="-1em" src="/christen.jpg" alt="react" /></Flex>
         </Box>
@@ -74,24 +74,24 @@ export default function About() {
          <Heading style={fontLuckiestGuy} as="h2" size="2xl">It all started with HTML 4.01 and it was Helena Christensen who sparked my technical interest</Heading>
          <br/>
          <Text maxW="37em" p="0.5em 0em" fontSize="md">
-          I developed my first webpage in 1998, when I was 15 years old approximatly when the HTML 4.01 specification was released. You can still find the page on Way Back Machine here:  
+          I developed my first webpage in 1998, when I was 15 years old, approximately when the HTML 4.01 specification was released. You can still find the page on the Wayback Machine here:  
           <Link target="_blank" color="#2B4570" href="https://web.archive.org/web/20030402184329/http://home0.inet.tele.dk/Christen/" m="0em 1em">
            The Greatest Tribute to Helena Christensen <FaExternalLinkSquareAlt  />
           </Link>
           <br/><br/>
-          I then took a long brake from web development and released my next webpage in 2013, approximatly when HTML5 was released, as I develoepd a collaboration platform based on html5 and web 2.0 principles. This site was called sammenspil.dk you can also see in way back machine here:
+          I then took a long break from web development and released my next webpage in 2013, approximately when HTML5 was released, as I developed a collaboration platform based on HTML5 and Web 2.0 principles. This site was called sammenspil.dk. You can also see it on the Wayback Machine here:
           <Link target="_blank" color="#2B4570" href="https://web.archive.org/web/20140210065209/http://www.sammenspil.dk/mobile/index.php" m="0em 1em">
           www.sammenspil.dk <FaExternalLinkSquareAlt/> 
           </Link>
-          You can also watch a youtube video (in danish) explaining the concept here: 
+          You can also watch a YouTube video (in Danish) explaining the concept here: 
           <Link color="#2B4570" href="https://www.youtube.com/watch?v=qGX4YSsUZrk" target="_blank" m="0em 1em">
           What is sammenspil<FaExternalLinkSquareAlt  />
           </Link>
           <br/><br/>
-          Then I took a smaller brake from web development, but in 2017 I released a smartwatch app acompanied by a webpage called www.watchandspin.com where the user could design their own quiz for smartwatches and share it.
-          Link for way back machine and youtube can be found here:
+          Then I took a shorter break from web development, but in 2017 I released a smartwatch app accompanied by a webpage called www.watchandspin.com
+, where users could design their own quizzes for smartwatches and share them. Links to the Wayback Machine and YouTube can be found here:
           <Link color="#2B4570" href="https://web.archive.org/web/20180808002923/http://watchandspin.com/" target="_blank" m="0em 1em">www.watchandspin.com <FaExternalLinkSquareAlt  /></Link>
-          <Link color="#2B4570" href="https://www.youtube.com/watch?v=I02Dh1zemuM" target="_blank" m="0em 1em">demo on youtube <FaExternalLinkSquareAlt  /></Link>
+          <Link color="#2B4570" href="https://www.youtube.com/watch?v=I02Dh1zemuM" target="_blank" m="0em 1em">and demo on youtube <FaExternalLinkSquareAlt  /></Link>
           </Text>
       </Box>
       <Box className="dropShadow">
