@@ -1,4 +1,5 @@
-import { Breadcrumb, Container, Heading, Image, Button, Text, Box, HStack, Icon } from "@chakra-ui/react"
+import { useEffect } from "react";
+import { Breadcrumb, Container, Heading, Image, Button, Text, Box, HStack, Icon, Accordion } from "@chakra-ui/react"
 import { TiArrowBack } from "react-icons/ti";
 
 const fontLuckiestGuy = {
@@ -214,30 +215,81 @@ function buildTextShape(text: string, size: 15 | 30): number[][] {
 
 //heartDefinition = letters30["I"];
 const heyShape = buildTextShape("HEY", 15);
+const christenShape = buildTextShape("CHRISTEN", 15);
 const initialFaceSources = Array.from({ length: 16 }, (_, index) => `/faces/${index + 1}.png`);
-let activeSequenceId = 0;
+const sequenceVersionByContainer = new WeakMap<HTMLElement, number>();
+const shapeByContainer = new WeakMap<HTMLElement, number[][]>();
+const enableResizeHook = false;
 
 type Position = {
     x: number;
     y: number;
 }
 
-function resetPatternDisplay() {
-    activeSequenceId += 1;
+function resolveTargetDisplay(displayElements?: HTMLElement): HTMLElement | null {
+    return displayElements ?? document.querySelector(".pattern-display") as HTMLElement | null;
+}
 
-    const displayElements = document.querySelector(".pattern-display") as HTMLElement | null;
-    if (!displayElements) {
+function bumpSequenceVersion(targetDisplayElements: HTMLElement): number {
+    const nextVersion = (sequenceVersionByContainer.get(targetDisplayElements) ?? 0) + 1;
+    sequenceVersionByContainer.set(targetDisplayElements, nextVersion);
+    return nextVersion;
+}
+
+function getSequenceVersion(targetDisplayElements: HTMLElement): number {
+    return sequenceVersionByContainer.get(targetDisplayElements) ?? 0;
+}
+
+function resetPatternDisplay(displayElements?: HTMLElement) {
+    const targetDisplayElements = resolveTargetDisplay(displayElements);
+    if (!targetDisplayElements) {
         return;
     }
 
-    displayElements.innerHTML = "";
+    bumpSequenceVersion(targetDisplayElements);
+    shapeByContainer.delete(targetDisplayElements);
+
+    targetDisplayElements.innerHTML = "";
 
     initialFaceSources.forEach((source) => {
         const imageElement = document.createElement("img");
         imageElement.src = source;
         imageElement.className = "pattern-heart";
         imageElement.style.display = "inline-block";
-        displayElements.appendChild(imageElement);
+        targetDisplayElements.appendChild(imageElement);
+    });
+}
+
+function seedFlyInStartPositions(displayElements?: HTMLElement) {
+    const targetDisplayElements = displayElements ?? document.querySelector(".pattern-display") as HTMLElement | null;
+    if (!targetDisplayElements) {
+        return;
+    }
+
+    const elements = targetDisplayElements.querySelectorAll(".pattern-heart") as NodeListOf<HTMLElement>;
+    const seedSizePercent = 8;
+
+    elements.forEach((element) => {
+        const randomLeft = Math.random() * (100 - seedSizePercent);
+        const randomTop = Math.random() * (100 - seedSizePercent);
+
+        element.style.position = "absolute";
+        element.style.display = "block";
+        element.style.left = `${randomLeft}%`;
+        element.style.top = `${randomTop}%`;
+        element.style.width = `${seedSizePercent}%`;
+        element.style.height = `${seedSizePercent}%`;
+        element.style.objectFit = "cover";
+        element.style.transition = "none";
+    });
+}
+
+function drawShapeWithFlyIn(shapeDefinition: number[][], displayElements?: HTMLElement) {
+    resetPatternDisplay(displayElements);
+    seedFlyInStartPositions(displayElements);
+
+    requestAnimationFrame(() => {
+        moveElements(shapeDefinition, false, false, displayElements);
     });
 }
 
@@ -247,28 +299,33 @@ function waitForMs(milliseconds: number): Promise<void> {
     });
 }
 
-async function playShapesInSequence(shapes: number[][][], waitMilliseconds: number): Promise<void> {
-    const sequenceId = ++activeSequenceId;
+async function playShapesInSequence(shapes: number[][][], waitMilliseconds: number, displayElements?: HTMLElement): Promise<void> {
+    const targetDisplayElements = resolveTargetDisplay(displayElements);
+    if (!targetDisplayElements) {
+        return;
+    }
+
+    const sequenceId = bumpSequenceVersion(targetDisplayElements);
     const safeWaitMs = Math.max(0, waitMilliseconds);
     const letterPauseMs = Math.ceil(safeWaitMs / 2);
 
     for (let index = 0; index < shapes.length; index++) {
-        if (sequenceId !== activeSequenceId) {
+        if (sequenceId !== getSequenceVersion(targetDisplayElements)) {
             return;
         }
 
         const shape = shapes[index];
-        moveElements(shape);
+        moveElements(shape, false, false, targetDisplayElements);
         await waitForMs(safeWaitMs);
 
-        if (sequenceId !== activeSequenceId) {
+        if (sequenceId !== getSequenceVersion(targetDisplayElements)) {
             return;
         }
 
         if (index < shapes.length - 1) {
             await waitForMs(letterPauseMs);
 
-            if (sequenceId !== activeSequenceId) {
+            if (sequenceId !== getSequenceVersion(targetDisplayElements)) {
                 return;
             }
         }
@@ -276,14 +333,14 @@ async function playShapesInSequence(shapes: number[][][], waitMilliseconds: numb
 
     await waitForMs(safeWaitMs);
 
-    if (sequenceId !== activeSequenceId) {
+    if (sequenceId !== getSequenceVersion(targetDisplayElements)) {
         return;
     }
 
-    resetPatternDisplay();
+    resetPatternDisplay(targetDisplayElements);
 }
 
-function playShapesInSqquence(text: string, waitMilliseconds: string | number): void {
+function playShapesInSqquence(text: string, waitMilliseconds: string | number, displayElements?: HTMLElement): void {
     const parsedMilliseconds = Number(waitMilliseconds);
     const safeWaitMs = Number.isFinite(parsedMilliseconds) ? Math.max(0, parsedMilliseconds) : 0;
 
@@ -292,41 +349,30 @@ function playShapesInSqquence(text: string, waitMilliseconds: string | number): 
         .split("")
         .map((character) => buildTextShape(character, 15));
 
-    void playShapesInSequence(letterShapes, safeWaitMs);
+    resetPatternDisplay(displayElements);
+    seedFlyInStartPositions(displayElements);
+
+    requestAnimationFrame(() => {
+        void playShapesInSequence(letterShapes, safeWaitMs, displayElements);
+    });
 }
 
-function moveElements(heartDefinition: number[][]) {
-
-    const displayElements = document.querySelector(".pattern-display") as HTMLElement;
-    let shapeType: "heart" | "star" | null;
-    shapeType = null;
-    let markedElements = document.querySelectorAll(".pattern-heart") as NodeListOf<HTMLElement>;
-    let noOfElements: number;
-
-
-
-
-    if (markedElements)   //check if variable is initialized
-    {
-        noOfElements = markedElements.length
-        //if pattern is heart
-        if (noOfElements > 0) {
-            shapeType = "heart"
-        }
-        else //check if pattern is star
-        {
-            markedElements = document.querySelectorAll(".pattern-star");
-            if (markedElements && markedElements.length > 0) {
-                shapeType = "star"
-            }
-        }
-
-    }
-    else {
+function moveElements(heartDefinition: number[][], disableAnimationDelay: boolean = false, disableTransition: boolean = false, displayElements?: HTMLElement) {
+    const targetDisplayElements = resolveTargetDisplay(displayElements);
+    if (!targetDisplayElements) {
         return null;
     }
 
-    if (displayElements && markedElements && shapeType) //display a pattern on screen
+    shapeByContainer.set(targetDisplayElements, heartDefinition);
+
+    let markedElements = targetDisplayElements.querySelectorAll(".pattern-heart") as NodeListOf<HTMLElement>;
+    let noOfElements: number = markedElements.length;
+
+    if (!noOfElements) {
+        return null;
+    }
+
+    if (targetDisplayElements && markedElements.length) //display a pattern on screen
     {
         var count = 0;
         heartDefinition.flat(Infinity).forEach(function(e){
@@ -344,37 +390,69 @@ function moveElements(heartDefinition: number[][]) {
             for (let index = 0; index < missingElements; index++) {
                 const sourceElement = markedElements[index % noOfElements] as HTMLElement;
                 const clonedElement = sourceElement.cloneNode(false) as HTMLElement;
-                displayElements.appendChild(clonedElement);
+                targetDisplayElements.appendChild(clonedElement);
             }
 
-            markedElements = document.querySelectorAll(`.pattern-${shapeType}`) as NodeListOf<HTMLElement>;
+            markedElements = targetDisplayElements.querySelectorAll(".pattern-heart") as NodeListOf<HTMLElement>;
             noOfElements = markedElements.length;
         }
 
-        let [currentposition, incrementXEmpty, incrementXFull, incrementY, elementWidth, elementHeight, drawStartPositionX] = calculatedrawingSize(displayElements, horizontalElements, verticalElements);
-        drawShape(heartDefinition, markedElements, currentposition, displayElements, incrementXEmpty, incrementXFull, drawStartPositionX, elementWidth, elementHeight, incrementY, noOfElements);
+        let [currentposition, incrementXEmpty, incrementXFull, incrementY, elementWidth, elementHeight, drawStartPositionX] = calculatedrawingSize(targetDisplayElements, horizontalElements, verticalElements);
+        drawShape(heartDefinition, markedElements, currentposition, targetDisplayElements, incrementXEmpty, incrementXFull, drawStartPositionX, elementWidth, elementHeight, incrementY, noOfElements, disableAnimationDelay, disableTransition);
 
 
 
     }
 }
 
-function drawShape(heartDefinition: number[][], markedElements: NodeListOf<HTMLElement>, currentposition: Position, displayElements: HTMLElement, incrementXEmpty: number, incrementXFull: number, drawStartPositionX: number, elementWidth : number, elementHeight : number, incrementY: number, noOfElements: number){
-                markedElements.forEach((element) => {
-                    element.style.display = "none";
-                });
+function renderInitialFaceImages() {
+    return initialFaceSources.map((source, index) => (
+        <Image key={`face-${index + 1}`} src={source} className="pattern-heart" display="inline-block"></Image>
+    ));
+}
+
+function renderStaticHtmlExample(displayId: string) {
+    const snippet = `<div id="${displayId}" class="pattern-display">
+  <img src="/faces/1.png" class="pattern-heart" alt="Face 1" />
+  <img src="/faces/2.png" class="pattern-heart" alt="Face 2" />
+  <img src="/faces/3.png" class="pattern-heart" alt="Face 3" />
+  <!-- ...repeat for all face images... -->
+</div>`;
+
+    return (
+        <Box
+            mb="1em"
+            p="0.75em"
+            borderWidth="1px"
+            borderColor="gray.300"
+            borderRadius="md"
+            bg="gray.50"
+        >
+            <Text as="pre" m="0" whiteSpace="pre-wrap" fontFamily="mono" fontSize="sm" color="gray.700">
+                {snippet}
+            </Text>
+        </Box>
+    );
+}
+
+function drawShape(heartDefinition: number[][], markedElements: NodeListOf<HTMLElement>, currentposition: Position, displayElements: HTMLElement, incrementXEmpty: number, incrementXFull: number, drawStartPositionX: number, elementWidth : number, elementHeight : number, incrementY: number, noOfElements: number, disableAnimationDelay: boolean = false, disableTransition: boolean = false){
+                const containerWidth = Math.max(displayElements.offsetWidth, 1);
+                const containerHeight = Math.max(displayElements.offsetHeight, 1);
 
                 const filledSlots = heartDefinition.flat().filter((slot) => slot === 1).length;
                 const maxStaggerMs = 1800;
-                const staggerStepMs = filledSlots > 1 ? Math.floor(maxStaggerMs / (filledSlots - 1)) : 0;
+                const staggerStepMs = disableAnimationDelay ? 0 : (filledSlots > 1 ? Math.floor(maxStaggerMs / (filledSlots - 1)) : 0);
 
                 let currentElement: number = 0;
                 let animationStep: number = 0;
+                const usedElements = new Set<HTMLElement>();
                 heartDefinition.forEach(row => {
                 row.forEach(rowElement => {
                     if (rowElement == 1) {
                         const delayMs = animationStep * staggerStepMs;
-                        placeAndTransformElement(markedElements[currentElement], currentposition.x, currentposition.y, elementWidth, elementHeight, delayMs);
+                        const activeElement = markedElements[currentElement];
+                        usedElements.add(activeElement);
+                        placeAndTransformElement(activeElement, currentposition.x, currentposition.y, elementWidth, elementHeight, containerWidth, containerHeight, delayMs, disableTransition);
                         currentposition.x = currentposition.x + incrementXFull;
                         currentElement++;
                         animationStep++;
@@ -390,17 +468,30 @@ function drawShape(heartDefinition: number[][], markedElements: NodeListOf<HTMLE
                 currentposition.x = drawStartPositionX;
                 currentposition.y = currentposition.y + incrementY;
             });
+
+            markedElements.forEach((element) => {
+                if (!usedElements.has(element)) {
+                    element.style.display = "none";
+                }
+            });
 }
 
-function placeAndTransformElement(element: HTMLElement, x: number, y: number, elementWidth: number, elementHeight: number, delayMs: number = 0): HTMLElement {
+function placeAndTransformElement(element: HTMLElement, x: number, y: number, elementWidth: number, elementHeight: number, containerWidth: number, containerHeight: number, delayMs: number = 0, disableTransition: boolean = false): HTMLElement {
+    const leftPercent = (x / containerWidth) * 100;
+    const topPercent = (y / containerHeight) * 100;
+    const widthPercent = (elementWidth / containerWidth) * 100;
+    const heightPercent = (elementHeight / containerHeight) * 100;
+
     (element as HTMLElement).style.position = "absolute";
     (element as HTMLElement).style.display = "block";
-    (element as HTMLElement).style.left = "0px";
-    (element as HTMLElement).style.top = "0px";
-    (element as HTMLElement).style.transform = `translate(${x}px, ${y}px)`;
-    (element as HTMLElement).style.height = elementWidth.toString() + "px";
-    (element as HTMLElement).style.width = elementWidth.toString() + "px";
-    (element as HTMLElement).style.transition = `transform 1000ms ease ${delayMs}ms`;
+    (element as HTMLElement).style.left = `${leftPercent}%`;
+    (element as HTMLElement).style.top = `${topPercent}%`;
+    (element as HTMLElement).style.height = `${heightPercent}%`;
+    (element as HTMLElement).style.width = `${widthPercent}%`;
+    (element as HTMLElement).style.objectFit = "cover";
+    (element as HTMLElement).style.transition = disableTransition
+        ? "none"
+        : `left 1000ms ease ${delayMs}ms, top 1000ms ease ${delayMs}ms, width 1000ms ease ${delayMs}ms, height 1000ms ease ${delayMs}ms`;
     (element as HTMLElement).style.zIndex = "2";
 
     return element;
@@ -445,6 +536,44 @@ function calculatedrawingSize(displayElements: HTMLElement , horizontalElements:
 }
 
 export default function Shapes() {
+    useEffect(() => {
+        if (!enableResizeHook) {
+            return;
+        }
+
+        const displayElements = document.querySelector(".pattern-display") as HTMLElement | null;
+        if (!displayElements) {
+            return;
+        }
+
+        let animationFrameId = 0;
+
+        const redrawCurrentShape = () => {
+            const currentShapeDefinition = shapeByContainer.get(displayElements);
+            if (!currentShapeDefinition) {
+                return;
+            }
+
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(() => {
+                moveElements(currentShapeDefinition, true, false, displayElements);
+            });
+        };
+
+        const resizeObserver = new ResizeObserver(() => {
+            redrawCurrentShape();
+        });
+
+        resizeObserver.observe(displayElements);
+        window.addEventListener("resize", redrawCurrentShape);
+
+        return () => {
+            cancelAnimationFrame(animationFrameId);
+            window.removeEventListener("resize", redrawCurrentShape);
+            resizeObserver.disconnect();
+        };
+    }, []);
+
     return (
         <Container>
             <Breadcrumb.Root size="lg" ml={{base:"0em", sm:"0em", md:"-16em", lg:"-16em"}} mt="0.5em" mb="0.5em">
@@ -474,32 +603,110 @@ export default function Shapes() {
                 <Text>In the final version it should be possible to configure flashy personal visual impressive messages using html. The messages should show images as words, animate the images coming together into a word, show the images as shapes like hearts, stars etc. It should also be relatively responsive.</Text>
                 <Text as="p" mb="2em"></Text>
                 <Text mb="2em">This panel below contains a rough demo, it shows some unorganized images that can be reordered by clicking a button.</Text>
-                   <HStack mt="2em" mb="2em">
-                        <Button onClick={() => { resetPatternDisplay(); moveElements(heartDefinition); }} bg="cyan.solid">Arrange Images as a heart</Button>
-                        <Button onClick={() => { resetPatternDisplay(); moveElements(heyShape); }} bg="cyan.solid">Arrange images as text</Button>
-                        <Button onClick={() => { resetPatternDisplay(); moveElements(star); }} bg="cyan.solid">Arrange images as a star</Button>
-                        <Button onClick={() => { resetPatternDisplay(); playShapesInSqquence("Christen", "3000"); }} bg="cyan.solid">Play Christen sequence</Button>
-                    </HStack>
-                <Container>
-                    <Box className="pattern-display" width="100%" height="500px" display="block">
-                        <Image src="/faces/1.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/2.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/3.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/4.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/5.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/6.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/7.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/8.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/9.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/10.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/11.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/12.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/13.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/14.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/15.png" className="pattern-heart" display="inline-block"></Image>
-                        <Image src="/faces/16.png" className="pattern-heart" display="inline-block"></Image>
-                    </Box>
-                </Container>
+                <Box mb="2.5em">
+                    <Accordion.Root collapsible defaultValue={["example-1"]}>
+                        <Accordion.Item value="example-1">
+                            <Accordion.ItemTrigger>
+                                <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">Example 1</Box>
+                                <Accordion.ItemIndicator />
+                            </Accordion.ItemTrigger>
+                            <Accordion.ItemContent>
+                                <Accordion.ItemBody>
+                                    <Text mb="1em">Arrange the image set into a heart with a fly-in transition.</Text>
+                                    {renderStaticHtmlExample("pattern-display-1")}
+                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-1") as HTMLElement | null; if (el) { drawShapeWithFlyIn(heartDefinition, el); } }} bg="cyan.solid">Arrange Images as a heart</Button>
+                                    <Box id="pattern-display-1" className="pattern-display" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden">
+                                        {renderInitialFaceImages()}
+                                    </Box>
+                                </Accordion.ItemBody>
+                            </Accordion.ItemContent>
+                        </Accordion.Item>
+                    </Accordion.Root>
+                </Box>
+
+                <Box mb="2.5em">
+                    <Accordion.Root collapsible>
+                        <Accordion.Item value="example-2">
+                            <Accordion.ItemTrigger>
+                                <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">Example 2</Box>
+                                <Accordion.ItemIndicator />
+                            </Accordion.ItemTrigger>
+                            <Accordion.ItemContent>
+                                <Accordion.ItemBody>
+                                    <Text mb="1em">Draw a single text shape for HEY using the letter matrix helper.</Text>
+                                    {renderStaticHtmlExample("pattern-display-2")}
+                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-2") as HTMLElement | null; if (el) { drawShapeWithFlyIn(heyShape, el); } }} bg="cyan.solid">Arrange images as text</Button>
+                                    <Box id="pattern-display-2" className="pattern-display" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden">
+                                        {renderInitialFaceImages()}
+                                    </Box>
+                                </Accordion.ItemBody>
+                            </Accordion.ItemContent>
+                        </Accordion.Item>
+                    </Accordion.Root>
+                </Box>
+
+                <Box mb="2.5em">
+                    <Accordion.Root collapsible>
+                        <Accordion.Item value="example-3">
+                            <Accordion.ItemTrigger>
+                                <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">Example 3</Box>
+                                <Accordion.ItemIndicator />
+                            </Accordion.ItemTrigger>
+                            <Accordion.ItemContent>
+                                <Accordion.ItemBody>
+                                    <Text mb="1em">Render the same faces into a star layout.</Text>
+                                    {renderStaticHtmlExample("pattern-display-3")}
+                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-3") as HTMLElement | null; if (el) { drawShapeWithFlyIn(star, el); } }} bg="cyan.solid">Arrange images as a star</Button>
+                                    <Box id="pattern-display-3" className="pattern-display" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden">
+                                        {renderInitialFaceImages()}
+                                    </Box>
+                                </Accordion.ItemBody>
+                            </Accordion.ItemContent>
+                        </Accordion.Item>
+                    </Accordion.Root>
+                </Box>
+
+                <Box mb="2.5em">
+                    <Accordion.Root collapsible>
+                        <Accordion.Item value="example-4">
+                            <Accordion.ItemTrigger>
+                                <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">Example 4</Box>
+                                <Accordion.ItemIndicator />
+                            </Accordion.ItemTrigger>
+                            <Accordion.ItemContent>
+                                <Accordion.ItemBody>
+                                    <Text mb="1em">Show CHRISTEN as one combined text shape with fly-in animation.</Text>
+                                    {renderStaticHtmlExample("pattern-display-4")}
+                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-4") as HTMLElement | null; if (el) { drawShapeWithFlyIn(christenShape, el); } }} bg="cyan.solid">Show Christen text shape</Button>
+                                    <Box id="pattern-display-4" className="pattern-display" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden">
+                                        {renderInitialFaceImages()}
+                                    </Box>
+                                </Accordion.ItemBody>
+                            </Accordion.ItemContent>
+                        </Accordion.Item>
+                    </Accordion.Root>
+                </Box>
+
+                <Box>
+                    <Accordion.Root collapsible>
+                        <Accordion.Item value="example-5">
+                            <Accordion.ItemTrigger>
+                                <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">Example 5</Box>
+                                <Accordion.ItemIndicator />
+                            </Accordion.ItemTrigger>
+                            <Accordion.ItemContent>
+                                <Accordion.ItemBody>
+                                    <Text mb="1em">Play CHRISTEN letter-by-letter as a sequence with pauses between letters.</Text>
+                                    {renderStaticHtmlExample("pattern-display-5")}
+                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-5") as HTMLElement | null; if (el) { playShapesInSqquence("Christen", "3000", el); } }} bg="cyan.solid">Play Christen sequence</Button>
+                                    <Box id="pattern-display-5" className="pattern-display" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden">
+                                        {renderInitialFaceImages()}
+                                    </Box>
+                                </Accordion.ItemBody>
+                            </Accordion.ItemContent>
+                        </Accordion.Item>
+                    </Accordion.Root>
+                </Box>
             </Box>
 
         </Container>
