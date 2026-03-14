@@ -177,16 +177,122 @@ const letters7 = {
 "Z": [[1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1]],
 };
 
+function buildTextShape(text: string, size: 15 | 30): number[][] {
+    const letterMap: Record<string, number[][]> = size === 15 ? letters15 : letters30;
+    const uppercaseChars = text.toUpperCase().split("");
+    const letterSpacingWidth = Math.ceil(size / 2);
+
+    if (uppercaseChars.length === 0) {
+        return [];
+    }
+
+    const emptyBlock: number[][] = Array.from({ length: size }, () => Array(size).fill(0));
+    const letterSpacingBlock: number[][] = Array.from({ length: size }, () => Array(letterSpacingWidth).fill(0));
+    const letterBlocks: number[][][] = uppercaseChars.map((char) => {
+        if (char === " ") {
+            return emptyBlock.map((row) => [...row]);
+        }
+
+        const letterBlock = letterMap[char];
+        if (!letterBlock) {
+            throw new Error(`Unsupported character '${char}' for size ${size}`);
+        }
+
+        return letterBlock;
+    });
+
+    return letterBlocks.reduce((combinedBlock, currentBlock, index) => {
+        if (index === 0) {
+            return currentBlock.map((row) => [...row]);
+        }
+
+        return combinedBlock.map((row, rowIndex) => {
+            return [...row, ...letterSpacingBlock[rowIndex], ...currentBlock[rowIndex]];
+        });
+    }, [] as number[][]);
+}
+
 //heartDefinition = letters30["I"];
-const heyShape = 
-letters15["H"]
-.concat(letters15["E"])
-.concat(letters15["Y"])
-;
+const heyShape = buildTextShape("HEY", 15);
+const initialFaceSources = Array.from({ length: 16 }, (_, index) => `/faces/${index + 1}.png`);
+let activeSequenceId = 0;
 
 type Position = {
     x: number;
     y: number;
+}
+
+function resetPatternDisplay() {
+    activeSequenceId += 1;
+
+    const displayElements = document.querySelector(".pattern-display") as HTMLElement | null;
+    if (!displayElements) {
+        return;
+    }
+
+    displayElements.innerHTML = "";
+
+    initialFaceSources.forEach((source) => {
+        const imageElement = document.createElement("img");
+        imageElement.src = source;
+        imageElement.className = "pattern-heart";
+        imageElement.style.display = "inline-block";
+        displayElements.appendChild(imageElement);
+    });
+}
+
+function waitForMs(milliseconds: number): Promise<void> {
+    return new Promise((resolve) => {
+        setTimeout(resolve, milliseconds);
+    });
+}
+
+async function playShapesInSequence(shapes: number[][][], waitMilliseconds: number): Promise<void> {
+    const sequenceId = ++activeSequenceId;
+    const safeWaitMs = Math.max(0, waitMilliseconds);
+    const letterPauseMs = Math.ceil(safeWaitMs / 2);
+
+    for (let index = 0; index < shapes.length; index++) {
+        if (sequenceId !== activeSequenceId) {
+            return;
+        }
+
+        const shape = shapes[index];
+        moveElements(shape);
+        await waitForMs(safeWaitMs);
+
+        if (sequenceId !== activeSequenceId) {
+            return;
+        }
+
+        if (index < shapes.length - 1) {
+            await waitForMs(letterPauseMs);
+
+            if (sequenceId !== activeSequenceId) {
+                return;
+            }
+        }
+    }
+
+    await waitForMs(safeWaitMs);
+
+    if (sequenceId !== activeSequenceId) {
+        return;
+    }
+
+    resetPatternDisplay();
+}
+
+function playShapesInSqquence(text: string, waitMilliseconds: string | number): void {
+    const parsedMilliseconds = Number(waitMilliseconds);
+    const safeWaitMs = Number.isFinite(parsedMilliseconds) ? Math.max(0, parsedMilliseconds) : 0;
+
+    const letterShapes = text
+        .toUpperCase()
+        .split("")
+        .map((character) => buildTextShape(character, 15));
+
+    void playShapesInSequence(letterShapes, safeWaitMs);
 }
 
 function moveElements(heartDefinition: number[][]) {
@@ -231,28 +337,22 @@ function moveElements(heartDefinition: number[][]) {
         let amountOfSlots = count;
         const horizontalElements = heartDefinition[0].length;
         const verticalElements = heartDefinition.length;
-        
-        let relationBetweenSlotsandElements: number = amountOfSlots / noOfElements;
 
-        
-        //elements fits number of slots - if one - do nothing
-        if (relationBetweenSlotsandElements == 1) {
+        // Ensure enough persistent DOM nodes exist so originals and clones all animate.
+        if (amountOfSlots > noOfElements) {
+            const missingElements = amountOfSlots - noOfElements;
+            for (let index = 0; index < missingElements; index++) {
+                const sourceElement = markedElements[index % noOfElements] as HTMLElement;
+                const clonedElement = sourceElement.cloneNode(false) as HTMLElement;
+                displayElements.appendChild(clonedElement);
+            }
 
-            let [currentposition, incrementXEmpty, incrementXFull, incrementY, elementWidth, elementHeight, drawStartPositionX] = calculatedrawingSize(displayElements, horizontalElements, verticalElements);
-            drawShape(heartDefinition, markedElements, currentposition, displayElements, incrementXEmpty, incrementXFull, drawStartPositionX, elementWidth, elementHeight, incrementY, noOfElements);
-
+            markedElements = document.querySelectorAll(`.pattern-${shapeType}`) as NodeListOf<HTMLElement>;
+            noOfElements = markedElements.length;
         }
-        //there are more slots than elements - if larger than one - round up -  use elements multiple times
-        else if(relationBetweenSlotsandElements > 1){
-            relationBetweenSlotsandElements = Math.ceil(relationBetweenSlotsandElements);
 
-            let [currentposition, incrementXEmpty, incrementXFull, incrementY, elementWidth, elementHeight, drawStartPositionX] = calculatedrawingSize(displayElements, horizontalElements, verticalElements);
-            drawShape(heartDefinition, markedElements, currentposition, displayElements, incrementXEmpty, incrementXFull, drawStartPositionX, elementWidth, elementHeight, incrementY, noOfElements);
-        }
-        else //There are more elements than slots - if smaller than one - calculate 1/fraction - multiply slots in shape
-        {
-                        //make sure that the template has a high amount of slots so this code doesnt have to be implemented.
-        }
+        let [currentposition, incrementXEmpty, incrementXFull, incrementY, elementWidth, elementHeight, drawStartPositionX] = calculatedrawingSize(displayElements, horizontalElements, verticalElements);
+        drawShape(heartDefinition, markedElements, currentposition, displayElements, incrementXEmpty, incrementXFull, drawStartPositionX, elementWidth, elementHeight, incrementY, noOfElements);
 
 
 
@@ -260,14 +360,24 @@ function moveElements(heartDefinition: number[][]) {
 }
 
 function drawShape(heartDefinition: number[][], markedElements: NodeListOf<HTMLElement>, currentposition: Position, displayElements: HTMLElement, incrementXEmpty: number, incrementXFull: number, drawStartPositionX: number, elementWidth : number, elementHeight : number, incrementY: number, noOfElements: number){
+                markedElements.forEach((element) => {
+                    element.style.display = "none";
+                });
+
+                const filledSlots = heartDefinition.flat().filter((slot) => slot === 1).length;
+                const maxStaggerMs = 1800;
+                const staggerStepMs = filledSlots > 1 ? Math.floor(maxStaggerMs / (filledSlots - 1)) : 0;
+
                 let currentElement: number = 0;
+                let animationStep: number = 0;
                 heartDefinition.forEach(row => {
                 row.forEach(rowElement => {
                     if (rowElement == 1) {
-                        let transformedElement = placeAndTransformElement(markedElements[currentElement], currentposition.x, currentposition.y, elementWidth, elementHeight);
+                        const delayMs = animationStep * staggerStepMs;
+                        placeAndTransformElement(markedElements[currentElement], currentposition.x, currentposition.y, elementWidth, elementHeight, delayMs);
                         currentposition.x = currentposition.x + incrementXFull;
-                        displayElements.appendChild(transformedElement.cloneNode(false));
                         currentElement++;
+                        animationStep++;
                         if(currentElement == noOfElements )
                         {
                             currentElement = 0;
@@ -282,13 +392,15 @@ function drawShape(heartDefinition: number[][], markedElements: NodeListOf<HTMLE
             });
 }
 
-function placeAndTransformElement(element: HTMLElement, x: number, y: number, elementWidth: number, elementHeight: number): HTMLElement {
+function placeAndTransformElement(element: HTMLElement, x: number, y: number, elementWidth: number, elementHeight: number, delayMs: number = 0): HTMLElement {
     (element as HTMLElement).style.position = "absolute";
     (element as HTMLElement).style.display = "block";
-    (element as HTMLElement).style.left = x.toString() + "px";
-    (element as HTMLElement).style.top = y.toString() + "px";
+    (element as HTMLElement).style.left = "0px";
+    (element as HTMLElement).style.top = "0px";
+    (element as HTMLElement).style.transform = `translate(${x}px, ${y}px)`;
     (element as HTMLElement).style.height = elementWidth.toString() + "px";
     (element as HTMLElement).style.width = elementWidth.toString() + "px";
+    (element as HTMLElement).style.transition = `transform 1000ms ease ${delayMs}ms`;
     (element as HTMLElement).style.zIndex = "2";
 
     return element;
@@ -363,8 +475,10 @@ export default function Shapes() {
                 <Text as="p" mb="2em"></Text>
                 <Text mb="2em">This panel below contains a rough demo, it shows some unorganized images that can be reordered by clicking a button.</Text>
                    <HStack mt="2em" mb="2em">
-                        <Button onClick={() => moveElements(heartDefinition)} bg="cyan.solid">Arrange Images as a heart</Button>
-                        <Button onClick={() => moveElements(heyShape)} bg="cyan.solid">Arrange images as text</Button>
+                        <Button onClick={() => { resetPatternDisplay(); moveElements(heartDefinition); }} bg="cyan.solid">Arrange Images as a heart</Button>
+                        <Button onClick={() => { resetPatternDisplay(); moveElements(heyShape); }} bg="cyan.solid">Arrange images as text</Button>
+                        <Button onClick={() => { resetPatternDisplay(); moveElements(star); }} bg="cyan.solid">Arrange images as a star</Button>
+                        <Button onClick={() => { resetPatternDisplay(); playShapesInSqquence("Christen", "3000"); }} bg="cyan.solid">Play Christen sequence</Button>
                     </HStack>
                 <Container>
                     <Box className="pattern-display" width="100%" height="500px" display="block">
