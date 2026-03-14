@@ -22,7 +22,7 @@ export default function Ongoing() {
         <List.Indicator asChild color="#2B4570">
           <RiProgress6Line />
         </List.Indicator>
-        To come....
+        <Link href="/ongoing/mail-rendering">Mail Rendering sandbox for template experiments.</Link>
       </List.Item>
       <List.Item>
         <List.Indicator asChild color="#2B4570">

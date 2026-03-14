@@ -1,12 +1,12 @@
 import { useEffect } from "react";
-import { Breadcrumb, Container, Heading, Image, Button, Text, Box, HStack, Icon, Accordion } from "@chakra-ui/react"
+import { Breadcrumb, Container, Heading, Button, Text, Box, HStack, Icon, Accordion } from "@chakra-ui/react"
 import { TiArrowBack } from "react-icons/ti";
 
 const fontLuckiestGuy = {
     fontFamily: 'LuckiestGuy'
 }
 
-let heartDefinition: number[][] = [
+let heart: number[][] = [
 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 
@@ -37,6 +37,29 @@ let heartDefinition: number[][] = [
 [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+]
+
+let questionMark: number[][] = [
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0],
+ [0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0],
+ [0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
+ [0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0],
+ [0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0],
+ [0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0],
+ [0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0],
+ [0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
+ [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+ [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 ]
 
@@ -220,6 +243,7 @@ const initialFaceSources = Array.from({ length: 16 }, (_, index) => `/faces/${in
 const sequenceVersionByContainer = new WeakMap<HTMLElement, number>();
 const shapeByContainer = new WeakMap<HTMLElement, number[][]>();
 const enableResizeHook = false;
+const defaultSequenceWaitMs = 3000;
 
 type Position = {
     x: number;
@@ -254,7 +278,7 @@ function resetPatternDisplay(displayElements?: HTMLElement) {
     initialFaceSources.forEach((source) => {
         const imageElement = document.createElement("img");
         imageElement.src = source;
-        imageElement.className = "pattern-heart";
+        imageElement.className = "pattern-element";
         imageElement.style.display = "inline-block";
         targetDisplayElements.appendChild(imageElement);
     });
@@ -266,7 +290,7 @@ function seedFlyInStartPositions(displayElements?: HTMLElement) {
         return;
     }
 
-    const elements = targetDisplayElements.querySelectorAll(".pattern-heart") as NodeListOf<HTMLElement>;
+    const elements = targetDisplayElements.querySelectorAll(".pattern-element") as NodeListOf<HTMLElement>;
     const seedSizePercent = 8;
 
     elements.forEach((element) => {
@@ -284,13 +308,106 @@ function seedFlyInStartPositions(displayElements?: HTMLElement) {
     });
 }
 
-function drawShapeWithFlyIn(shapeDefinition: number[][], displayElements?: HTMLElement) {
-    resetPatternDisplay(displayElements);
-    seedFlyInStartPositions(displayElements);
+function resolveShapeDefinitionFromClass(displayElements: HTMLElement): { hasShapeClass: boolean; shapeDefinition: number[][] | null } {
+    const shapeClass = Array.from(displayElements.classList).find((className) => className.startsWith("shape-") && className.length > "shape-".length);
+    if (!shapeClass) {
+        return { hasShapeClass: false, shapeDefinition: null };
+    }
 
-    requestAnimationFrame(() => {
-        moveElements(shapeDefinition, false, false, displayElements);
-    });
+    const shapeName = shapeClass.slice("shape-".length);
+    const shapeVariableRegistry: Record<string, number[][]> = {
+        heart,
+        star,
+        questionMark,
+        "question-mark": questionMark,
+        "questionmark": questionMark,
+        shapeA,
+        ...letters30,
+    };
+
+    const resolvedShape = shapeVariableRegistry[shapeName] ?? shapeVariableRegistry[shapeName.toLowerCase()] ?? null;
+    return { hasShapeClass: true, shapeDefinition: resolvedShape };
+}
+
+function drawShapeWithFlyIn(displayElements?: HTMLElement, shapeDefinition?: number[][] | string) {
+    const targetDisplayElements = resolveTargetDisplay(displayElements);
+    if (!targetDisplayElements) {
+        return;
+    }
+
+    const shouldFlyIn = targetDisplayElements.classList.contains("fly-in");
+    const isTypeSequence = targetDisplayElements.classList.contains("type-sequense") || targetDisplayElements.classList.contains("type-sequence");
+    const isTypeStatic = targetDisplayElements.classList.contains("type-static");
+    const { hasShapeClass, shapeDefinition: shapeDefinitionFromClass } = resolveShapeDefinitionFromClass(targetDisplayElements);
+    const shapeTextFromDisplay = resolveShapeText(undefined, targetDisplayElements);
+
+    // Container class contract wins over passed function arguments.
+    if (isTypeSequence && shapeTextFromDisplay) {
+        playShapesInSqquence(shapeTextFromDisplay, defaultSequenceWaitMs, targetDisplayElements);
+        return;
+    }
+
+    let resolvedShapeDefinition: number[][] | null = null;
+
+    if (shapeDefinitionFromClass) {
+        resolvedShapeDefinition = shapeDefinitionFromClass;
+    } else if (hasShapeClass) {
+        const shapeClass = Array.from(targetDisplayElements.classList).find((className) => className.startsWith("shape-") && className.length > "shape-".length);
+        console.warn(`No shape variable found for class "${shapeClass}". Falling back to questionMark.`);
+        resolvedShapeDefinition = questionMark;
+    } else if (isTypeStatic && shapeTextFromDisplay) {
+        resolvedShapeDefinition = buildTextShape(shapeTextFromDisplay, 15);
+    } else if (typeof shapeDefinition === "string") {
+        if (isTypeSequence) {
+            playShapesInSqquence(shapeDefinition, defaultSequenceWaitMs, targetDisplayElements);
+            return;
+        }
+
+        if (isTypeStatic) {
+            resolvedShapeDefinition = buildTextShape(shapeDefinition, 15);
+        }
+    } else if (shapeDefinition) {
+        resolvedShapeDefinition = shapeDefinition;
+    }
+
+    if (!resolvedShapeDefinition) {
+        return;
+    }
+
+    resetPatternDisplay(targetDisplayElements);
+
+    if (shouldFlyIn) {
+        seedFlyInStartPositions(targetDisplayElements);
+        // Double RAF: first frame commits the random start positions to paint,
+        // second frame applies transition targets so the browser animates between them.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                moveElements(
+                    resolvedShapeDefinition,
+                    !shouldFlyIn,
+                    !shouldFlyIn,
+                    targetDisplayElements,
+                );
+            });
+        });
+    } else {
+        requestAnimationFrame(() => {
+            moveElements(
+                resolvedShapeDefinition,
+                !shouldFlyIn,
+                !shouldFlyIn,
+                targetDisplayElements,
+            );
+        });
+    }
+}
+
+function resolveShapeText(sourceElement?: HTMLElement | null, displayElements?: HTMLElement) {
+    return sourceElement?.getAttribute("shapeText")
+        ?? sourceElement?.getAttribute("data-shape-text")
+        ?? displayElements?.getAttribute("shapeText")
+        ?? displayElements?.getAttribute("data-shape-text")
+        ?? null;
 }
 
 function waitForMs(milliseconds: number): Promise<void> {
@@ -343,18 +460,32 @@ async function playShapesInSequence(shapes: number[][][], waitMilliseconds: numb
 function playShapesInSqquence(text: string, waitMilliseconds: string | number, displayElements?: HTMLElement): void {
     const parsedMilliseconds = Number(waitMilliseconds);
     const safeWaitMs = Number.isFinite(parsedMilliseconds) ? Math.max(0, parsedMilliseconds) : 0;
+    const targetDisplayElements = resolveTargetDisplay(displayElements);
+    if (!targetDisplayElements) {
+        return;
+    }
+
+    const shouldFlyIn = targetDisplayElements.classList.contains("fly-in");
 
     const letterShapes = text
         .toUpperCase()
         .split("")
         .map((character) => buildTextShape(character, 15));
 
-    resetPatternDisplay(displayElements);
-    seedFlyInStartPositions(displayElements);
+    resetPatternDisplay(targetDisplayElements);
 
-    requestAnimationFrame(() => {
-        void playShapesInSequence(letterShapes, safeWaitMs, displayElements);
-    });
+    if (shouldFlyIn) {
+        seedFlyInStartPositions(targetDisplayElements);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                void playShapesInSequence(letterShapes, safeWaitMs, targetDisplayElements);
+            });
+        });
+    } else {
+        requestAnimationFrame(() => {
+            void playShapesInSequence(letterShapes, safeWaitMs, targetDisplayElements);
+        });
+    }
 }
 
 function moveElements(heartDefinition: number[][], disableAnimationDelay: boolean = false, disableTransition: boolean = false, displayElements?: HTMLElement) {
@@ -365,7 +496,7 @@ function moveElements(heartDefinition: number[][], disableAnimationDelay: boolea
 
     shapeByContainer.set(targetDisplayElements, heartDefinition);
 
-    let markedElements = targetDisplayElements.querySelectorAll(".pattern-heart") as NodeListOf<HTMLElement>;
+    let markedElements = targetDisplayElements.querySelectorAll(".pattern-element") as NodeListOf<HTMLElement>;
     let noOfElements: number = markedElements.length;
 
     if (!noOfElements) {
@@ -393,7 +524,7 @@ function moveElements(heartDefinition: number[][], disableAnimationDelay: boolea
                 targetDisplayElements.appendChild(clonedElement);
             }
 
-            markedElements = targetDisplayElements.querySelectorAll(".pattern-heart") as NodeListOf<HTMLElement>;
+            markedElements = targetDisplayElements.querySelectorAll(".pattern-element") as NodeListOf<HTMLElement>;
             noOfElements = markedElements.length;
         }
 
@@ -405,17 +536,14 @@ function moveElements(heartDefinition: number[][], disableAnimationDelay: boolea
     }
 }
 
-function renderInitialFaceImages() {
-    return initialFaceSources.map((source, index) => (
-        <Image key={`face-${index + 1}`} src={source} className="pattern-heart" display="inline-block"></Image>
-    ));
-}
-
-function renderStaticHtmlExample(displayId: string) {
-    const snippet = `<div id="${displayId}" class="pattern-display">
-  <img src="/faces/1.png" class="pattern-heart" alt="Face 1" />
-  <img src="/faces/2.png" class="pattern-heart" alt="Face 2" />
-  <img src="/faces/3.png" class="pattern-heart" alt="Face 3" />
+function renderStaticHtmlExample(displayId: string, className: string, dataShapeText?: string, dataInit?: string, dataInitSource?: string) {
+    const dataShapeTextAttribute = dataShapeText ? ` data-shape-text="${dataShapeText}"` : "";
+    const dataInitAttribute = dataInit ? ` data-init="${dataInit}"` : "";
+    const dataInitSourceAttribute = dataInitSource ? ` data-init-source="${dataInitSource}"` : "";
+    const snippet = `<div id="${displayId}" class="${className}"${dataShapeTextAttribute}${dataInitAttribute}${dataInitSourceAttribute}>
+  <img src="/faces/1.png" class="pattern-element" alt="Face 1" />
+  <img src="/faces/2.png" class="pattern-element" alt="Face 2" />
+  <img src="/faces/3.png" class="pattern-element" alt="Face 3" />
   <!-- ...repeat for all face images... -->
 </div>`;
 
@@ -535,7 +663,74 @@ function calculatedrawingSize(displayElements: HTMLElement , horizontalElements:
     return [currentposition, incrementXEmpty, incrementXFull, incrementY, elementWidth, elementHeight, drawStartPositionX]
 }
 
+function setupPatternDisplayInitialization(displayElement: HTMLElement): (() => void) | null {
+    const initValueRaw = displayElement.getAttribute("data-init")?.trim();
+    if (!initValueRaw) {
+        return null;
+    }
+
+    const initValue = initValueRaw.toLowerCase();
+
+    if (initValue === "page-load") {
+        // Delay slightly so the accordion's CSS open animation completes before
+        // drawing. Chakra UI runs an open transition even for defaultValue items,
+        // so calling drawShapeWithFlyIn at useEffect time would run the fly-in
+        // while the content panel is still invisible.
+        const timeoutId = window.setTimeout(() => {
+            drawShapeWithFlyIn(displayElement);
+        }, 200);
+        return () => window.clearTimeout(timeoutId);
+    }
+
+    const delaySeconds = Number(initValue);
+    if (Number.isFinite(delaySeconds) && delaySeconds >= 0) {
+        const timeoutId = window.setTimeout(() => {
+            drawShapeWithFlyIn(displayElement);
+        }, delaySeconds * 1000);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }
+
+    if (initValue === "button-click") {
+        const initSourceSelector = displayElement.getAttribute("data-init-source")?.trim();
+        if (!initSourceSelector) {
+            return null;
+        }
+
+        const sourceElement = document.querySelector(initSourceSelector) as HTMLElement | null;
+        if (!sourceElement) {
+            console.warn(`No init source found for selector "${initSourceSelector}" on #${displayElement.id}.`);
+            return null;
+        }
+
+        const handleInit = () => {
+            drawShapeWithFlyIn(displayElement);
+        };
+
+        sourceElement.addEventListener("click", handleInit);
+        return () => {
+            sourceElement.removeEventListener("click", handleInit);
+        };
+    }
+
+    console.warn(`Unknown data-init value "${initValueRaw}" on #${displayElement.id}. Use "page-load", seconds like "10", or "button-click".`);
+    return null;
+}
+
 export default function Shapes() {
+    useEffect(() => {
+        const displayElements = Array.from(document.querySelectorAll(".pattern-display")) as HTMLElement[];
+        const cleanupTasks = displayElements
+            .map((displayElement) => setupPatternDisplayInitialization(displayElement))
+            .filter((cleanupTask): cleanupTask is () => void => Boolean(cleanupTask));
+
+        return () => {
+            cleanupTasks.forEach((cleanupTask) => cleanupTask());
+        };
+    }, []);
+
     useEffect(() => {
         if (!enableResizeHook) {
             return;
@@ -613,10 +808,25 @@ export default function Shapes() {
                             <Accordion.ItemContent>
                                 <Accordion.ItemBody>
                                     <Text mb="1em">Arrange the image set into a heart with a fly-in transition.</Text>
-                                    {renderStaticHtmlExample("pattern-display-1")}
-                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-1") as HTMLElement | null; if (el) { drawShapeWithFlyIn(heartDefinition, el); } }} bg="cyan.solid">Arrange Images as a heart</Button>
-                                    <Box id="pattern-display-1" className="pattern-display" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden">
-                                        {renderInitialFaceImages()}
+                                    {renderStaticHtmlExample("pattern-display-1", "pattern-display fly-in type-static shape-heart", undefined, "page-load")}
+                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-1") as HTMLElement | null; if (el) { drawShapeWithFlyIn(el); } }} bg="cyan.solid">Arrange Images as a heart</Button>
+                                    <Box id="pattern-display-1" className="pattern-display fly-in type-static shape-heart" data-init="page-load" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden" css={{ "& > img": { display: "inline-block" } }}>
+                                        <img src="/faces/1.png" className="pattern-element" alt="Face 1" />
+                                        <img src="/faces/2.png" className="pattern-element" alt="Face 2" />
+                                        <img src="/faces/3.png" className="pattern-element" alt="Face 3" />
+                                        <img src="/faces/4.png" className="pattern-element" alt="Face 4" />
+                                        <img src="/faces/5.png" className="pattern-element" alt="Face 5" />
+                                        <img src="/faces/6.png" className="pattern-element" alt="Face 6" />
+                                        <img src="/faces/7.png" className="pattern-element" alt="Face 7" />
+                                        <img src="/faces/8.png" className="pattern-element" alt="Face 8" />
+                                        <img src="/faces/9.png" className="pattern-element" alt="Face 9" />
+                                        <img src="/faces/10.png" className="pattern-element" alt="Face 10" />
+                                        <img src="/faces/11.png" className="pattern-element" alt="Face 11" />
+                                        <img src="/faces/12.png" className="pattern-element" alt="Face 12" />
+                                        <img src="/faces/13.png" className="pattern-element" alt="Face 13" />
+                                        <img src="/faces/14.png" className="pattern-element" alt="Face 14" />
+                                        <img src="/faces/15.png" className="pattern-element" alt="Face 15" />
+                                        <img src="/faces/16.png" className="pattern-element" alt="Face 16" />
                                     </Box>
                                 </Accordion.ItemBody>
                             </Accordion.ItemContent>
@@ -634,10 +844,25 @@ export default function Shapes() {
                             <Accordion.ItemContent>
                                 <Accordion.ItemBody>
                                     <Text mb="1em">Draw a single text shape for HEY using the letter matrix helper.</Text>
-                                    {renderStaticHtmlExample("pattern-display-2")}
-                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-2") as HTMLElement | null; if (el) { drawShapeWithFlyIn(heyShape, el); } }} bg="cyan.solid">Arrange images as text</Button>
-                                    <Box id="pattern-display-2" className="pattern-display" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden">
-                                        {renderInitialFaceImages()}
+                                    {renderStaticHtmlExample("pattern-display-2", "pattern-display type-static fly-in", "HEY", "button-click")}
+                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-2") as HTMLElement | null; if (el) { drawShapeWithFlyIn(el); } }} bg="cyan.solid">Arrange images as text</Button>
+                                    <Box id="pattern-display-2" className="pattern-display type-static fly-in" data-shape-text="HEY" data-init="button-click" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden" css={{ "& > img": { display: "inline-block" } }}>
+                                        <img src="/faces/1.png" className="pattern-element" alt="Face 1" />
+                                        <img src="/faces/2.png" className="pattern-element" alt="Face 2" />
+                                        <img src="/faces/3.png" className="pattern-element" alt="Face 3" />
+                                        <img src="/faces/4.png" className="pattern-element" alt="Face 4" />
+                                        <img src="/faces/5.png" className="pattern-element" alt="Face 5" />
+                                        <img src="/faces/6.png" className="pattern-element" alt="Face 6" />
+                                        <img src="/faces/7.png" className="pattern-element" alt="Face 7" />
+                                        <img src="/faces/8.png" className="pattern-element" alt="Face 8" />
+                                        <img src="/faces/9.png" className="pattern-element" alt="Face 9" />
+                                        <img src="/faces/10.png" className="pattern-element" alt="Face 10" />
+                                        <img src="/faces/11.png" className="pattern-element" alt="Face 11" />
+                                        <img src="/faces/12.png" className="pattern-element" alt="Face 12" />
+                                        <img src="/faces/13.png" className="pattern-element" alt="Face 13" />
+                                        <img src="/faces/14.png" className="pattern-element" alt="Face 14" />
+                                        <img src="/faces/15.png" className="pattern-element" alt="Face 15" />
+                                        <img src="/faces/16.png" className="pattern-element" alt="Face 16" />
                                     </Box>
                                 </Accordion.ItemBody>
                             </Accordion.ItemContent>
@@ -655,10 +880,25 @@ export default function Shapes() {
                             <Accordion.ItemContent>
                                 <Accordion.ItemBody>
                                     <Text mb="1em">Render the same faces into a star layout.</Text>
-                                    {renderStaticHtmlExample("pattern-display-3")}
-                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-3") as HTMLElement | null; if (el) { drawShapeWithFlyIn(star, el); } }} bg="cyan.solid">Arrange images as a star</Button>
-                                    <Box id="pattern-display-3" className="pattern-display" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden">
-                                        {renderInitialFaceImages()}
+                                    {renderStaticHtmlExample("pattern-display-3", "pattern-display type-static shape-star", undefined, "10")}
+                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-3") as HTMLElement | null; if (el) { drawShapeWithFlyIn(el); } }} bg="cyan.solid">Arrange images as a star</Button>
+                                    <Box id="pattern-display-3" className="pattern-display type-static shape-star" data-init="10" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden" css={{ "& > img": { display: "inline-block" } }}>
+                                        <img src="/faces/1.png" className="pattern-element" alt="Face 1" />
+                                        <img src="/faces/2.png" className="pattern-element" alt="Face 2" />
+                                        <img src="/faces/3.png" className="pattern-element" alt="Face 3" />
+                                        <img src="/faces/4.png" className="pattern-element" alt="Face 4" />
+                                        <img src="/faces/5.png" className="pattern-element" alt="Face 5" />
+                                        <img src="/faces/6.png" className="pattern-element" alt="Face 6" />
+                                        <img src="/faces/7.png" className="pattern-element" alt="Face 7" />
+                                        <img src="/faces/8.png" className="pattern-element" alt="Face 8" />
+                                        <img src="/faces/9.png" className="pattern-element" alt="Face 9" />
+                                        <img src="/faces/10.png" className="pattern-element" alt="Face 10" />
+                                        <img src="/faces/11.png" className="pattern-element" alt="Face 11" />
+                                        <img src="/faces/12.png" className="pattern-element" alt="Face 12" />
+                                        <img src="/faces/13.png" className="pattern-element" alt="Face 13" />
+                                        <img src="/faces/14.png" className="pattern-element" alt="Face 14" />
+                                        <img src="/faces/15.png" className="pattern-element" alt="Face 15" />
+                                        <img src="/faces/16.png" className="pattern-element" alt="Face 16" />
                                     </Box>
                                 </Accordion.ItemBody>
                             </Accordion.ItemContent>
@@ -676,10 +916,25 @@ export default function Shapes() {
                             <Accordion.ItemContent>
                                 <Accordion.ItemBody>
                                     <Text mb="1em">Show CHRISTEN as one combined text shape with fly-in animation.</Text>
-                                    {renderStaticHtmlExample("pattern-display-4")}
-                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-4") as HTMLElement | null; if (el) { drawShapeWithFlyIn(christenShape, el); } }} bg="cyan.solid">Show Christen text shape</Button>
-                                    <Box id="pattern-display-4" className="pattern-display" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden">
-                                        {renderInitialFaceImages()}
+                                    {renderStaticHtmlExample("pattern-display-4", "pattern-display type-static fly-in   ", "Christen", "button-click")}
+                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-4") as HTMLElement | null; if (el) { drawShapeWithFlyIn(el); } }} bg="cyan.solid">Show Christen text shape</Button>
+                                    <Box id="pattern-display-4" className="pattern-display type-static fly-in" data-shape-text="Christen" data-init="button-click" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden" css={{ "& > img": { display: "inline-block" } }}>
+                                        <img src="/faces/1.png" className="pattern-element" alt="Face 1" />
+                                        <img src="/faces/2.png" className="pattern-element" alt="Face 2" />
+                                        <img src="/faces/3.png" className="pattern-element" alt="Face 3" />
+                                        <img src="/faces/4.png" className="pattern-element" alt="Face 4" />
+                                        <img src="/faces/5.png" className="pattern-element" alt="Face 5" />
+                                        <img src="/faces/6.png" className="pattern-element" alt="Face 6" />
+                                        <img src="/faces/7.png" className="pattern-element" alt="Face 7" />
+                                        <img src="/faces/8.png" className="pattern-element" alt="Face 8" />
+                                        <img src="/faces/9.png" className="pattern-element" alt="Face 9" />
+                                        <img src="/faces/10.png" className="pattern-element" alt="Face 10" />
+                                        <img src="/faces/11.png" className="pattern-element" alt="Face 11" />
+                                        <img src="/faces/12.png" className="pattern-element" alt="Face 12" />
+                                        <img src="/faces/13.png" className="pattern-element" alt="Face 13" />
+                                        <img src="/faces/14.png" className="pattern-element" alt="Face 14" />
+                                        <img src="/faces/15.png" className="pattern-element" alt="Face 15" />
+                                        <img src="/faces/16.png" className="pattern-element" alt="Face 16" />
                                     </Box>
                                 </Accordion.ItemBody>
                             </Accordion.ItemContent>
@@ -697,10 +952,37 @@ export default function Shapes() {
                             <Accordion.ItemContent>
                                 <Accordion.ItemBody>
                                     <Text mb="1em">Play CHRISTEN letter-by-letter as a sequence with pauses between letters.</Text>
-                                    {renderStaticHtmlExample("pattern-display-5")}
-                                    <Button mb="1em" onClick={() => { const el = document.getElementById("pattern-display-5") as HTMLElement | null; if (el) { playShapesInSqquence("Christen", "3000", el); } }} bg="cyan.solid">Play Christen sequence</Button>
-                                    <Box id="pattern-display-5" className="pattern-display" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden">
-                                        {renderInitialFaceImages()}
+                                    {renderStaticHtmlExample("pattern-display-5", "pattern-display type-sequense fly-in", "Christen", "button-click")}
+                                    <Button
+                                        mb="1em"
+                                        data-shape-text="Christen"
+                                        onClick={() => {
+                                            const el = document.getElementById("pattern-display-5") as HTMLElement | null;
+                                            if (el) {
+                                                drawShapeWithFlyIn(el);
+                                            }
+                                        }}
+                                        bg="cyan.solid"
+                                    >
+                                        Play Christen sequence
+                                    </Button>
+                                    <Box id="pattern-display-5" className="pattern-display type-sequense fly-in" data-shape-text="Christen" data-init="button-click" width="100%" aspectRatio="1 / 1" display="block" position="relative" overflow="hidden" css={{ "& > img": { display: "inline-block" } }}>
+                                        <img src="/faces/1.png" className="pattern-element" alt="Face 1" />
+                                        <img src="/faces/2.png" className="pattern-element" alt="Face 2" />
+                                        <img src="/faces/3.png" className="pattern-element" alt="Face 3" />
+                                        <img src="/faces/4.png" className="pattern-element" alt="Face 4" />
+                                        <img src="/faces/5.png" className="pattern-element" alt="Face 5" />
+                                        <img src="/faces/6.png" className="pattern-element" alt="Face 6" />
+                                        <img src="/faces/7.png" className="pattern-element" alt="Face 7" />
+                                        <img src="/faces/8.png" className="pattern-element" alt="Face 8" />
+                                        <img src="/faces/9.png" className="pattern-element" alt="Face 9" />
+                                        <img src="/faces/10.png" className="pattern-element" alt="Face 10" />
+                                        <img src="/faces/11.png" className="pattern-element" alt="Face 11" />
+                                        <img src="/faces/12.png" className="pattern-element" alt="Face 12" />
+                                        <img src="/faces/13.png" className="pattern-element" alt="Face 13" />
+                                        <img src="/faces/14.png" className="pattern-element" alt="Face 14" />
+                                        <img src="/faces/15.png" className="pattern-element" alt="Face 15" />
+                                        <img src="/faces/16.png" className="pattern-element" alt="Face 16" />
                                     </Box>
                                 </Accordion.ItemBody>
                             </Accordion.ItemContent>
