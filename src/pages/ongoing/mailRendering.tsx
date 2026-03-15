@@ -272,81 +272,52 @@ function mergeRectangles(cells: QuadCell[], width: number, height: number): Quad
             }
         }
     });
-    // Aggressive merge: merge så stort område som muligt med samme farve
-    const merged: QuadCell[] = [];
-    const used: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
+    // To-fase merge: først horisontal, derefter vertikal
+    // 1. Horisontal merge
+    const horizontalMerged: QuadCell[] = [];
     for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; ) {
-            if (used[y][x] || !grid[y][x]) {
+        let x = 0;
+        while (x < width) {
+            const cell = grid[y][x];
+            if (!cell) {
                 x++;
                 continue;
             }
-            const color = grid[y][x]?.color;
-            // Find max width
+            const color = cell.color;
             let maxW = 1;
-            while (x + maxW < width && grid[y][x + maxW] && grid[y][x + maxW]?.color === color && !used[y][x + maxW]) {
+            while (x + maxW < width && grid[y][x + maxW] && grid[y][x + maxW]?.color === color) {
                 maxW++;
             }
-            // Find max height for denne bredde
-            let maxH = 1;
-            let canExpand = true;
-            while (canExpand && y + maxH < height) {
-                for (let dx = 0; dx < maxW; dx++) {
-                    if (!grid[y + maxH][x + dx] || grid[y + maxH][x + dx]?.color !== color || used[y + maxH][x + dx]) {
-                        canExpand = false;
-                        break;
-                    }
-                }
-                if (canExpand) maxH++;
-            }
-            // Mark used
-            for (let dy = 0; dy < maxH; dy++) {
-                for (let dx = 0; dx < maxW; dx++) {
-                    used[y + dy][x + dx] = true;
-                }
-            }
-            merged.push({ x, y, width: maxW, height: maxH, color: color ?? "" });
+            horizontalMerged.push({ x, y, width: maxW, height: 1, color });
             x += maxW;
         }
     }
-    // Ekstra aggressiv: merge identiske firkanter (samme farve, størrelse, placeret direkte ved siden af hinanden)
-    // Lodret merge
-    let changed = true;
-    while (changed) {
-        changed = false;
-        for (let i = 0; i < merged.length; i++) {
-            for (let j = i + 1; j < merged.length; j++) {
-                const a = merged[i];
-                const b = merged[j];
-                // Lodret merge
-                if (
-                    a.x === b.x &&
-                    a.width === b.width &&
-                    a.color === b.color &&
-                    a.y + a.height === b.y
-                ) {
-                    // Merge b ind i a
-                    a.height += b.height;
-                    merged.splice(j, 1);
-                    changed = true;
-                    break;
-                }
-                // Vandret merge
-                if (
-                    a.y === b.y &&
-                    a.height === b.height &&
-                    a.color === b.color &&
-                    a.x + a.width === b.x
-                ) {
-                    // Merge b ind i a
-                    a.width += b.width;
-                    merged.splice(j, 1);
-                    changed = true;
+
+    // 2. Vertikal merge
+    const merged: QuadCell[] = [];
+    let used: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
+    for (let i = 0; i < horizontalMerged.length; i++) {
+        const rect = horizontalMerged[i];
+        if (used[rect.y][rect.x]) continue;
+        let maxH = 1;
+        let canExpand = true;
+        while (canExpand && rect.y + maxH < height) {
+            for (let dx = 0; dx < rect.width; dx++) {
+                const nextCell = grid[rect.y + maxH][rect.x + dx];
+                if (!nextCell || nextCell.color !== rect.color) {
+                    canExpand = false;
                     break;
                 }
             }
-            if (changed) break;
+            if (canExpand) maxH++;
         }
+        // Mark used
+        for (let dy = 0; dy < maxH; dy++) {
+            for (let dx = 0; dx < rect.width; dx++) {
+                used[rect.y + dy][rect.x + dx] = true;
+            }
+        }
+        merged.push({ x: rect.x, y: rect.y, width: rect.width, height: maxH, color: rect.color });
     }
     return merged;
 }
@@ -797,6 +768,7 @@ export default function MailRendering() {
                             <Button
                                 size="sm"
                                 colorScheme="green"
+                                style={{ display: 'none' }}
                                 onClick={async () => {
                                     await sendHtmlEmail(imageHtmlSectionRectangleCover, "Mail Rendering - Rectangle Cover metode");
                                     setErrorMessage("Email sendt!");
