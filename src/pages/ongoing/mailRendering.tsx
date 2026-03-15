@@ -1,3 +1,142 @@
+// Rectangle covering pipeline: maximal rectangles (greedy)
+function createHtmlSectionRectangleCover(result: TransformedImageResult, fileName: string | null): string {
+    const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
+    // Build pixel grid
+    const grid: string[][] = Array.from({ length: result.height }, () => Array(result.width).fill(""));
+    result.cells.forEach(cell => {
+        for (let dy = 0; dy < cell.height; dy++) {
+            for (let dx = 0; dx < cell.width; dx++) {
+                const y = cell.y + dy;
+                const x = cell.x + dx;
+                if (y < result.height && x < result.width) {
+                    grid[y][x] = cell.color;
+                }
+            }
+        }
+    });
+    // Rectangle covering algorithm
+    const rectangles: { x: number; y: number; width: number; height: number; color: string }[] = [];
+    const covered = Array.from({ length: result.height }, () => Array(result.width).fill(false));
+    for (let y = 0; y < result.height; y++) {
+        for (let x = 0; x < result.width; x++) {
+            if (covered[y][x]) continue;
+            const color = grid[y][x];
+            // Find maximal rectangle starting at (x, y)
+            let maxWidth = 1;
+            while (x + maxWidth < result.width && grid[y][x + maxWidth] === color && !covered[y][x + maxWidth]) {
+                maxWidth++;
+            }
+            let maxHeight = 1;
+            let valid = true;
+            while (y + maxHeight < result.height && valid) {
+                for (let dx = 0; dx < maxWidth; dx++) {
+                    if (grid[y + maxHeight][x + dx] !== color || covered[y + maxHeight][x + dx]) {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (valid) maxHeight++;
+            }
+            // Mark covered
+            for (let dy = 0; dy < maxHeight; dy++) {
+                for (let dx = 0; dx < maxWidth; dx++) {
+                    covered[y + dy][x + dx] = true;
+                }
+            }
+            rectangles.push({ x, y, width: maxWidth, height: maxHeight, color });
+        }
+    }
+    // Generate HTML table
+    let tableRows = "";
+    for (let y = 0; y < result.height; y++) {
+        let rowHtml = "";
+        for (let x = 0; x < result.width; x++) {
+            // Find rectangle starting at (x, y)
+            const rect = rectangles.find(r => r.x === x && r.y === y);
+            if (rect) {
+                // Quantize color to 12-bit
+                const rgbMatch = rect.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                let hexColor = "#000000";
+                if (rgbMatch) {
+                    const quantize = (v: number) => Math.floor(v / 16) * 16;
+                    const r = quantize(parseInt(rgbMatch[1], 10));
+                    const g = quantize(parseInt(rgbMatch[2], 10));
+                    const b = quantize(parseInt(rgbMatch[3], 10));
+                    const toHex = (v: number) => v.toString(16).padStart(2, '0');
+                    const hex6 = toHex(r) + toHex(g) + toHex(b);
+                    hexColor = `#${hex6}`;
+                    if (
+                        hex6.length === 6 &&
+                        hex6[0] === hex6[1] &&
+                        hex6[2] === hex6[3] &&
+                        hex6[4] === hex6[5]
+                    ) {
+                        hexColor = `#${hex6[0]}${hex6[2]}${hex6[4]}`;
+                    }
+                }
+                let attrs = `bgcolor=${hexColor}`;
+                if (rect.width > 1) attrs += ` colspan=${rect.width}`;
+                if (rect.height > 1) attrs += ` rowspan=${rect.height}`;
+                // Removed width and height attributes
+                rowHtml += `<td ${attrs}></td>`;
+            }
+        }
+        tableRows += `<tr>${rowHtml}</tr>`;
+    }
+    let html = `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;"><h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Rectangle Cover HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    html = html.replace(/\n/g, '').replace(/\s{2,}/g, '').replace(/>\s+</g, '><');
+    return html;
+}
+// New pipeline: PixelGridHtml - each cell is a pixel, no merging, 12-bit color
+function createHtmlSectionPixelGrid(result: TransformedImageResult, fileName: string | null): string {
+    const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
+    // Build grid for placement
+    const grid: (QuadCell | null)[][] = Array.from({ length: result.height }, () => Array(result.width).fill(null));
+    result.cells.forEach(cell => {
+        for (let dy = 0; dy < cell.height; dy++) {
+            for (let dx = 0; dx < cell.width; dx++) {
+                const y = cell.y + dy;
+                const x = cell.x + dx;
+                if (y < result.height && x < result.width) {
+                    grid[y][x] = cell;
+                }
+            }
+        }
+    });
+    let tableRows = "";
+    for (let y = 0; y < result.height; y++) {
+        let rowHtml = "";
+        for (let x = 0; x < result.width; x++) {
+            const cell = grid[y][x];
+            if (!cell) continue;
+            // Quantize to 4 bits per channel (12-bit color)
+            const rgbMatch = cell.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+            let hexColor = "#000000";
+            if (rgbMatch) {
+                const quantize = (v: number) => Math.floor(v / 16) * 16;
+                const r = quantize(parseInt(rgbMatch[1], 10));
+                const g = quantize(parseInt(rgbMatch[2], 10));
+                const b = quantize(parseInt(rgbMatch[3], 10));
+                const toHex = (v: number) => v.toString(16).padStart(2, '0');
+                const hex6 = toHex(r) + toHex(g) + toHex(b);
+                hexColor = `#${hex6}`;
+                if (
+                    hex6.length === 6 &&
+                    hex6[0] === hex6[1] &&
+                    hex6[2] === hex6[3] &&
+                    hex6[4] === hex6[5]
+                ) {
+                    hexColor = `#${hex6[0]}${hex6[2]}${hex6[4]}`;
+                }
+            }
+            rowHtml += `<td bgcolor=${hexColor}></td>`;
+        }
+        tableRows += `<tr>${rowHtml}</tr>`;
+    }
+    let html = `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;"><h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">PixelGrid HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    html = html.replace(/\n/g, '').replace(/\s{2,}/g, '').replace(/>\s+</g, '><');
+    return html;
+}
 // New method: y-boundary based table generation
 // Third method: simple 10% scale, 1 cell per pixel, horizontal merge only
 function createHtmlSectionSimple10pct(file: File | null, fileName: string | null, originalPreviewUrl: string | null): Promise<string> {
@@ -44,8 +183,19 @@ function createHtmlSectionSimple10pct(file: File | null, fileName: string | null
                             break;
                         }
                     }
-                    // Convert rgb(...) to hex for bgcolor
-                    const hexColor = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+                    // Convert rgb(...) to hex for bgcolor, use 3-digit if possible
+                    const toHex = (v: number) => v.toString(16).padStart(2, '0');
+                    const hex6 = toHex(r) + toHex(g) + toHex(b);
+                    let hexColor = `#${hex6}`;
+                    // Check if each channel is a double (e.g. aa, bb, cc)
+                    if (
+                        hex6.length === 6 &&
+                        hex6[0] === hex6[1] &&
+                        hex6[2] === hex6[3] &&
+                        hex6[4] === hex6[5]
+                    ) {
+                        hexColor = `#${hex6[0]}${hex6[2]}${hex6[4]}`;
+                    }
                     rowHtml += `<td bgcolor="${hexColor}" width="${runLength}" height="1"` +
                         (runLength > 1 ? ` colspan="${runLength}"` : "") +
                         `></td>`;
@@ -122,47 +272,108 @@ function mergeRectangles(cells: QuadCell[], width: number, height: number): Quad
             }
         }
     });
-    // Merge horizontally
+    // Aggressive merge: merge så stort område som muligt med samme farve
     const merged: QuadCell[] = [];
     const used: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; ) {
-            const cell = grid[y][x];
-            if (!cell || used[y][x]) {
+            if (used[y][x] || !grid[y][x]) {
                 x++;
                 continue;
             }
-            // Expand horizontally
-            let w = 1;
-            while (x + w < width && grid[y][x + w] && grid[y][x + w]?.color === cell.color && !used[y][x + w]) {
-                w++;
+            const color = grid[y][x]?.color;
+            // Find max width
+            let maxW = 1;
+            while (x + maxW < width && grid[y][x + maxW] && grid[y][x + maxW]?.color === color && !used[y][x + maxW]) {
+                maxW++;
             }
-            // Expand vertically
-            let h = 1;
+            // Find max height for denne bredde
+            let maxH = 1;
             let canExpand = true;
-            while (y + h < height && canExpand) {
-                for (let dx = 0; dx < w; dx++) {
-                    if (!grid[y + h][x + dx] || grid[y + h][x + dx]?.color !== cell.color || used[y + h][x + dx]) {
+            while (canExpand && y + maxH < height) {
+                for (let dx = 0; dx < maxW; dx++) {
+                    if (!grid[y + maxH][x + dx] || grid[y + maxH][x + dx]?.color !== color || used[y + maxH][x + dx]) {
                         canExpand = false;
                         break;
                     }
                 }
-                if (canExpand) h++;
+                if (canExpand) maxH++;
             }
             // Mark used
-            for (let dy = 0; dy < h; dy++) {
-                for (let dx = 0; dx < w; dx++) {
+            for (let dy = 0; dy < maxH; dy++) {
+                for (let dx = 0; dx < maxW; dx++) {
                     used[y + dy][x + dx] = true;
                 }
             }
-            merged.push({ x, y, width: w, height: h, color: cell.color });
-            x += w;
+            merged.push({ x, y, width: maxW, height: maxH, color: color ?? "" });
+            x += maxW;
+        }
+    }
+    // Ekstra aggressiv: merge identiske firkanter (samme farve, størrelse, placeret direkte ved siden af hinanden)
+    // Lodret merge
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (let i = 0; i < merged.length; i++) {
+            for (let j = i + 1; j < merged.length; j++) {
+                const a = merged[i];
+                const b = merged[j];
+                // Lodret merge
+                if (
+                    a.x === b.x &&
+                    a.width === b.width &&
+                    a.color === b.color &&
+                    a.y + a.height === b.y
+                ) {
+                    // Merge b ind i a
+                    a.height += b.height;
+                    merged.splice(j, 1);
+                    changed = true;
+                    break;
+                }
+                // Vandret merge
+                if (
+                    a.y === b.y &&
+                    a.height === b.height &&
+                    a.color === b.color &&
+                    a.x + a.width === b.x
+                ) {
+                    // Merge b ind i a
+                    a.width += b.width;
+                    merged.splice(j, 1);
+                    changed = true;
+                    break;
+                }
+            }
+            if (changed) break;
         }
     }
     return merged;
 }
 import { useEffect, useMemo, useState } from "react";
 import { Box, Button, Container, Heading, Text, Breadcrumb, Image as ChakraImage, Accordion } from "@chakra-ui/react";
+// Placeholder for Resend integration
+async function sendHtmlEmail(html: string, subject: string) {
+    // POST to backend route instead of calling Resend directly
+    const recipient = "christengc@gmail.com";
+    const sender = "test@christenchristensen.dk";
+    const response = await fetch("/api/send-mail", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            from: sender,
+            to: recipient,
+            subject,
+            html
+        })
+    });
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text);
+    }
+}
 
 
 const fontLuckiestGuy = {
@@ -276,7 +487,7 @@ function buildQuadtreeCells(imageData: ImageData): QuadCell[] {
     const { width, height, data } = imageData;
     const rootSize = nextPowerOfTwo(Math.max(width, height));
     const minCellSize = 4;
-    const varianceThreshold = 1200;
+    const varianceThreshold = 1200; // Increased for coarser rectangles
     const maxDepth = Math.max(1, Math.ceil(Math.log2(rootSize)));
     const cells: QuadCell[] = [];
 
@@ -337,14 +548,27 @@ function createHtmlSectionFromQuadCells(result: TransformedImageResult, fileName
                 x++;
                 continue;
             }
-            // Convert rgb(...) to hex for bgcolor
+            // Convert rgb(...) to hex for bgcolor, use 3-digit if possible
             const rgbMatch = cell.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
             let hexColor = "#000000";
             if (rgbMatch) {
-                const r = parseInt(rgbMatch[1], 10);
-                const g = parseInt(rgbMatch[2], 10);
-                const b = parseInt(rgbMatch[3], 10);
-                hexColor = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+                // Quantize to 4 bits per channel (16 levels)
+                const quantize = (v: number) => Math.floor(v / 16) * 16;
+                const r = quantize(parseInt(rgbMatch[1], 10));
+                const g = quantize(parseInt(rgbMatch[2], 10));
+                const b = quantize(parseInt(rgbMatch[3], 10));
+                const toHex = (v: number) => v.toString(16).padStart(2, '0');
+                const hex6 = toHex(r) + toHex(g) + toHex(b);
+                hexColor = `#${hex6}`;
+                // Check if each channel is a double (e.g. aa, bb, cc)
+                if (
+                    hex6.length === 6 &&
+                    hex6[0] === hex6[1] &&
+                    hex6[2] === hex6[3] &&
+                    hex6[4] === hex6[5]
+                ) {
+                    hexColor = `#${hex6[0]}${hex6[2]}${hex6[4]}`;
+                }
             }
             // Calculate colspan/rowspan
             let colspan = cell.width;
@@ -357,16 +581,19 @@ function createHtmlSectionFromQuadCells(result: TransformedImageResult, fileName
                     }
                 }
             }
-            rowHtml += `<td bgcolor="${hexColor}" width="1" height="1"` +
-                (colspan > 1 ? ` colspan="${colspan}"` : "") +
-                (rowspan > 1 ? ` rowspan="${rowspan}"` : "") +
-                `></td>`;
+            // Only add colspan/rowspan if > 1, drop width/height
+            let tdAttrs = `bgcolor=${hexColor}`;
+            if (colspan > 1) tdAttrs += ` colspan=${colspan}`;
+            if (rowspan > 1) tdAttrs += ` rowspan=${rowspan}`;
+            rowHtml += `<td ${tdAttrs}></td>`;
             x += colspan;
         }
         tableRows += `<tr>${rowHtml}</tr>`;
     }
-    // Table style: minified, only essential props
-    return `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;"><h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Quadtree HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    // Minify HTML: remove newlines, spaces, indentation
+    let html = `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;"><h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Quadtree HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    html = html.replace(/\n/g, '').replace(/\s{2,}/g, '').replace(/>\s+</g, '><');
+    return html;
 }
 
 function transformImage(file: File): Promise<TransformedImageResult> {
@@ -376,9 +603,17 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                 const dataUrl = await readFileAsDataUrl(file);
                 const image = await loadImage(dataUrl);
 
-                // Use 20% resolution.
-                const targetWidth = Math.max(1, Math.floor(image.width * 0.2));
-                const targetHeight = Math.max(1, Math.floor(image.height * 0.2));
+                // Adaptiv nedskallering: forsøg at ramme ca. 110.000 pixels
+                const targetPixels = 110000;
+                const aspectRatio = image.width / image.height;
+                // Udregn optimal bredde og højde
+                let targetWidth = Math.sqrt(targetPixels * aspectRatio);
+                let targetHeight = Math.sqrt(targetPixels / aspectRatio);
+                targetWidth = Math.max(1, Math.floor(targetWidth));
+                targetHeight = Math.max(1, Math.floor(targetHeight));
+                // Begræns til original størrelse
+                targetWidth = Math.min(targetWidth, image.width);
+                targetHeight = Math.min(targetHeight, image.height);
 
                 const canvas = document.createElement("canvas");
                 canvas.width = targetWidth;
@@ -410,6 +645,18 @@ export default function MailRendering() {
     const [transformedResult, setTransformedResult] = useState<TransformedImageResult | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    // Rectangle covering pipeline
+    const imageHtmlSectionRectangleCover = useMemo(() => {
+        if (!transformedResult) return "";
+        return createHtmlSectionRectangleCover(transformedResult, selectedFile?.name ?? null);
+    }, [selectedFile, transformedResult]);
+
+    // New pipeline: PixelGridHtml
+    const imageHtmlSectionPixelGrid = useMemo(() => {
+        if (!transformedResult) return "";
+        return createHtmlSectionPixelGrid(transformedResult, selectedFile?.name ?? null);
+    }, [selectedFile, transformedResult]);
 
     const imageHtmlSection = useMemo(() => {
         if (!transformedResult) {
@@ -583,8 +830,63 @@ export default function MailRendering() {
                     </Box>
                 )}
 
-                {(imageHtmlSection || imageHtmlSectionYBoundary || imageHtmlSectionSimple) && (
-                    <Accordion.Root collapsible defaultValue={["classic", "horizontal", "simple"]}>
+                {(imageHtmlSection || imageHtmlSectionYBoundary || imageHtmlSectionSimple || imageHtmlSectionPixelGrid || imageHtmlSectionRectangleCover) && (
+                    <Accordion.Root collapsible defaultValue={["classic", "horizontal", "simple", "pixelgrid", "rectanglecover"]}>
+                                                <Accordion.Item value="rectanglecover">
+                                                    <Accordion.ItemTrigger>
+                                                        <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">Rectangle Cover metode</Box>
+                                                        <Accordion.ItemIndicator />
+                                                    </Accordion.ItemTrigger>
+                                                    <Accordion.ItemContent>
+                                                        <Accordion.ItemBody>
+                                                            <Text mb="1em">HTML genereret ved at dække billedet med størst mulige ensfarvede rektangler (maximal rectangles, greedy).</Text>
+                                                            {imageHtmlSectionRectangleCover ? (
+                                                                <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionRectangleCover }} />
+                                                            ) : (
+                                                                <Text color="red.600" mb="1em">Ingen HTML blev genereret. Prøv at uploade et billede igen.</Text>
+                                                            )}
+                                                            <Box display="flex" alignItems="center" mb="0.5em">
+                                                                <Button
+                                                                    size="sm"
+                                                                    colorScheme="cyan"
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await navigator.clipboard.writeText(imageHtmlSectionRectangleCover);
+                                                                            setErrorMessage("HTML kopieret!");
+                                                                            setTimeout(() => setErrorMessage(null), 1200);
+                                                                        } catch {
+                                                                            setErrorMessage("Kunne ikke kopiere HTML.");
+                                                                            setTimeout(() => setErrorMessage(null), 1200);
+                                                                        }
+                                                                    }}
+                                                                    mr="1em"
+                                                                >
+                                                                    Kopier HTML
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    colorScheme="green"
+                                                                    onClick={async () => {
+                                                                        await sendHtmlEmail(imageHtmlSectionRectangleCover, "Mail Rendering - Rectangle Cover metode");
+                                                                        setErrorMessage("Email sendt!");
+                                                                        setTimeout(() => setErrorMessage(null), 1200);
+                                                                    }}
+                                                                    mr="1em"
+                                                                >
+                                                                    Send email
+                                                                </Button>
+                                                                {errorMessage && (
+                                                                    <Text color="cyan.700" fontSize="sm">
+                                                                        {errorMessage}
+                                                                    </Text>
+                                                                )}
+                                                            </Box>
+                                                            <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
+                                                                {imageHtmlSectionRectangleCover || "Ingen HTML blev genereret."}
+                                                            </Box>
+                                                        </Accordion.ItemBody>
+                                                    </Accordion.ItemContent>
+                                                </Accordion.Item>
                         <Accordion.Item value="classic">
                             <Accordion.ItemTrigger>
                                 <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">Klassisk metode</Box>
@@ -616,6 +918,18 @@ export default function MailRendering() {
                                             mr="1em"
                                         >
                                             Kopier HTML
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            colorScheme="green"
+                                            onClick={async () => {
+                                                await sendHtmlEmail(imageHtmlSection, "Mail Rendering - Klassisk metode");
+                                                setErrorMessage("Email sendt!");
+                                                setTimeout(() => setErrorMessage(null), 1200);
+                                            }}
+                                            mr="1em"
+                                        >
+                                            Send email
                                         </Button>
                                         {errorMessage && (
                                             <Text color="cyan.700" fontSize="sm">
@@ -661,6 +975,18 @@ export default function MailRendering() {
                                         >
                                             Kopier HTML
                                         </Button>
+                                        <Button
+                                            size="sm"
+                                            colorScheme="green"
+                                            onClick={async () => {
+                                                await sendHtmlEmail(imageHtmlSectionYBoundary, "Mail Rendering - Horisontal merge metode");
+                                                setErrorMessage("Email sendt!");
+                                                setTimeout(() => setErrorMessage(null), 1200);
+                                            }}
+                                            mr="1em"
+                                        >
+                                            Send email
+                                        </Button>
                                         {errorMessage && (
                                             <Text color="cyan.700" fontSize="sm">
                                                 {errorMessage}
@@ -705,6 +1031,18 @@ export default function MailRendering() {
                                         >
                                             Kopier HTML
                                         </Button>
+                                        <Button
+                                            size="sm"
+                                            colorScheme="green"
+                                            onClick={async () => {
+                                                await sendHtmlEmail(imageHtmlSectionSimple, "Mail Rendering - Simpel 10% metode");
+                                                setErrorMessage("Email sendt!");
+                                                setTimeout(() => setErrorMessage(null), 1200);
+                                            }}
+                                            mr="1em"
+                                        >
+                                            Send email
+                                        </Button>
                                         {errorMessage && (
                                             <Text color="cyan.700" fontSize="sm">
                                                 {errorMessage}
@@ -713,6 +1051,61 @@ export default function MailRendering() {
                                     </Box>
                                     <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
                                         {imageHtmlSectionSimple || "Ingen HTML blev genereret."}
+                                    </Box>
+                                </Accordion.ItemBody>
+                            </Accordion.ItemContent>
+                        </Accordion.Item>
+                        <Accordion.Item value="pixelgrid">
+                            <Accordion.ItemTrigger>
+                                <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">PixelGrid metode</Box>
+                                <Accordion.ItemIndicator />
+                            </Accordion.ItemTrigger>
+                            <Accordion.ItemContent>
+                                <Accordion.ItemBody>
+                                    <Text mb="1em">HTML genereret med én celle pr. pixel, ingen merging, 12-bit farver.</Text>
+                                    {imageHtmlSectionPixelGrid ? (
+                                        <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionPixelGrid }} />
+                                    ) : (
+                                        <Text color="red.600" mb="1em">Ingen HTML blev genereret. Prøv at uploade et billede igen.</Text>
+                                    )}
+                                    <Box display="flex" alignItems="center" mb="0.5em">
+                                        <Button
+                                            size="sm"
+                                            colorScheme="cyan"
+                                            onClick={async () => {
+                                                try {
+                                                    await navigator.clipboard.writeText(imageHtmlSectionPixelGrid);
+                                                    setErrorMessage("HTML kopieret!");
+                                                    setTimeout(() => setErrorMessage(null), 1200);
+                                                } catch {
+                                                    setErrorMessage("Kunne ikke kopiere HTML.");
+                                                    setTimeout(() => setErrorMessage(null), 1200);
+                                                }
+                                            }}
+                                            mr="1em"
+                                        >
+                                            Kopier HTML
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            colorScheme="green"
+                                            onClick={async () => {
+                                                await sendHtmlEmail(imageHtmlSectionPixelGrid, "Mail Rendering - PixelGrid metode");
+                                                setErrorMessage("Email sendt!");
+                                                setTimeout(() => setErrorMessage(null), 1200);
+                                            }}
+                                            mr="1em"
+                                        >
+                                            Send email
+                                        </Button>
+                                        {errorMessage && (
+                                            <Text color="cyan.700" fontSize="sm">
+                                                {errorMessage}
+                                            </Text>
+                                        )}
+                                    </Box>
+                                    <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
+                                        {imageHtmlSectionPixelGrid || "Ingen HTML blev genereret."}
                                     </Box>
                                 </Accordion.ItemBody>
                             </Accordion.ItemContent>

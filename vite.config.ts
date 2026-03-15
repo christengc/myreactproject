@@ -6,4 +6,14 @@ import tsconfigPaths from "vite-tsconfig-paths"
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000', // or 3001, depending on your backend port
+        changeOrigin: true,
+      },
+    },
+  },
 })
+
+
