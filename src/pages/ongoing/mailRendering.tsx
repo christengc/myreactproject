@@ -603,8 +603,8 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                 const dataUrl = await readFileAsDataUrl(file);
                 const image = await loadImage(dataUrl);
 
-                // Adaptiv nedskallering: forsøg at ramme ca. 110.000 pixels
-                const targetPixels = 110000;
+                // Adaptiv nedskallering: forsøg at ramme ca. 90.000 pixels
+                const targetPixels = 90000;
                 const aspectRatio = image.width / image.height;
                 // Udregn optimal bredde og højde
                 let targetWidth = Math.sqrt(targetPixels * aspectRatio);
@@ -646,49 +646,11 @@ export default function MailRendering() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    // Rectangle covering pipeline
+    // Rectangle covering pipeline only
     const imageHtmlSectionRectangleCover = useMemo(() => {
         if (!transformedResult) return "";
         return createHtmlSectionRectangleCover(transformedResult, selectedFile?.name ?? null);
     }, [selectedFile, transformedResult]);
-
-    // New pipeline: PixelGridHtml
-    const imageHtmlSectionPixelGrid = useMemo(() => {
-        if (!transformedResult) return "";
-        return createHtmlSectionPixelGrid(transformedResult, selectedFile?.name ?? null);
-    }, [selectedFile, transformedResult]);
-
-    const imageHtmlSection = useMemo(() => {
-        if (!transformedResult) {
-            return "";
-        }
-        return createHtmlSectionFromQuadCells(transformedResult, selectedFile?.name ?? null);
-    }, [selectedFile, transformedResult]);
-
-    // New y-boundary method
-    const imageHtmlSectionYBoundary = useMemo(() => {
-        if (!transformedResult) {
-            return "";
-        }
-        return createHtmlSectionYBoundary(transformedResult, selectedFile?.name ?? null);
-    }, [selectedFile, transformedResult]);
-
-    // Third method: simple 10% scale, 1 cell per pixel, horizontal merge only
-    const [imageHtmlSectionSimple, setImageHtmlSectionSimple] = useState<string>("");
-    useEffect(() => {
-        if (!selectedFile) {
-            setImageHtmlSectionSimple("");
-            return;
-        }
-        createHtmlSectionSimple10pct(selectedFile, selectedFile?.name ?? null, originalPreviewUrl).then(setImageHtmlSectionSimple);
-    }, [selectedFile, originalPreviewUrl]);
-    useEffect(() => {
-        return () => {
-            if (originalPreviewUrl && originalPreviewUrl.startsWith("blob:")) {
-                URL.revokeObjectURL(originalPreviewUrl);
-            }
-        };
-    }, [originalPreviewUrl]);
 
     const handleImageUpload = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -720,29 +682,6 @@ export default function MailRendering() {
             setIsProcessing(false);
         }
     };
-
-    // DOM element count for generated HTML
-    const domElementCountClassic = useMemo(() => {
-        if (!imageHtmlSection) return 0;
-        const match = imageHtmlSection.match(/<table[\s\S]*<\/table>/);
-        const tableHtml = match ? match[0] : imageHtmlSection;
-        const tagMatches = tableHtml.match(/<\/?[a-zA-Z]+/g);
-        return tagMatches ? tagMatches.length : 0;
-    }, [imageHtmlSection]);
-    const domElementCountHorizontal = useMemo(() => {
-        if (!imageHtmlSectionYBoundary) return 0;
-        const match = imageHtmlSectionYBoundary.match(/<table[\s\S]*<\/table>/);
-        const tableHtml = match ? match[0] : imageHtmlSectionYBoundary;
-        const tagMatches = tableHtml.match(/<\/?[a-zA-Z]+/g);
-        return tagMatches ? tagMatches.length : 0;
-    }, [imageHtmlSectionYBoundary]);
-    const domElementCountSimple = useMemo(() => {
-        if (!imageHtmlSectionSimple) return 0;
-        const match = imageHtmlSectionSimple.match(/<table[\s\S]*<\/table>/);
-        const tableHtml = match ? match[0] : imageHtmlSectionSimple;
-        const tagMatches = tableHtml.match(/<\/?[a-zA-Z]+/g);
-        return tagMatches ? tagMatches.length : 0;
-    }, [imageHtmlSectionSimple]);
 
     return (
         <Container>
@@ -822,295 +761,61 @@ export default function MailRendering() {
                 {transformedResult && (
                     <Box mb="1.5em">
                         <Heading as="h3" size="md" mb="0.5em">
-                            Quadtree data
+                            Rectangle Cover data
                         </Heading>
                         <Text color="#2B4570">
-                            {`Squares: ${transformedResult.cells.length} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
+                            {`Rectangles: ${transformedResult.cells.length} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
                         </Text>
                     </Box>
                 )}
 
-                {(imageHtmlSection || imageHtmlSectionYBoundary || imageHtmlSectionSimple || imageHtmlSectionPixelGrid || imageHtmlSectionRectangleCover) && (
-                    <Accordion.Root collapsible defaultValue={["classic", "horizontal", "simple", "pixelgrid", "rectanglecover"]}>
-                                                <Accordion.Item value="rectanglecover">
-                                                    <Accordion.ItemTrigger>
-                                                        <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">Rectangle Cover metode</Box>
-                                                        <Accordion.ItemIndicator />
-                                                    </Accordion.ItemTrigger>
-                                                    <Accordion.ItemContent>
-                                                        <Accordion.ItemBody>
-                                                            <Text mb="1em">HTML genereret ved at dække billedet med størst mulige ensfarvede rektangler (maximal rectangles, greedy).</Text>
-                                                            {imageHtmlSectionRectangleCover ? (
-                                                                <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionRectangleCover }} />
-                                                            ) : (
-                                                                <Text color="red.600" mb="1em">Ingen HTML blev genereret. Prøv at uploade et billede igen.</Text>
-                                                            )}
-                                                            <Box display="flex" alignItems="center" mb="0.5em">
-                                                                <Button
-                                                                    size="sm"
-                                                                    colorScheme="cyan"
-                                                                    onClick={async () => {
-                                                                        try {
-                                                                            await navigator.clipboard.writeText(imageHtmlSectionRectangleCover);
-                                                                            setErrorMessage("HTML kopieret!");
-                                                                            setTimeout(() => setErrorMessage(null), 1200);
-                                                                        } catch {
-                                                                            setErrorMessage("Kunne ikke kopiere HTML.");
-                                                                            setTimeout(() => setErrorMessage(null), 1200);
-                                                                        }
-                                                                    }}
-                                                                    mr="1em"
-                                                                >
-                                                                    Kopier HTML
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    colorScheme="green"
-                                                                    onClick={async () => {
-                                                                        await sendHtmlEmail(imageHtmlSectionRectangleCover, "Mail Rendering - Rectangle Cover metode");
-                                                                        setErrorMessage("Email sendt!");
-                                                                        setTimeout(() => setErrorMessage(null), 1200);
-                                                                    }}
-                                                                    mr="1em"
-                                                                >
-                                                                    Send email
-                                                                </Button>
-                                                                {errorMessage && (
-                                                                    <Text color="cyan.700" fontSize="sm">
-                                                                        {errorMessage}
-                                                                    </Text>
-                                                                )}
-                                                            </Box>
-                                                            <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
-                                                                {imageHtmlSectionRectangleCover || "Ingen HTML blev genereret."}
-                                                            </Box>
-                                                        </Accordion.ItemBody>
-                                                    </Accordion.ItemContent>
-                                                </Accordion.Item>
-                        <Accordion.Item value="classic">
-                            <Accordion.ItemTrigger>
-                                <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">Klassisk metode</Box>
-                                <Accordion.ItemIndicator />
-                            </Accordion.ItemTrigger>
-                            <Accordion.ItemContent>
-                                <Accordion.ItemBody>
-                                    <Text mb="1em">HTML genereret med klassisk quadtree + rectangle merge.</Text>
-                                    {imageHtmlSection ? (
-                                        <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSection }} />
-                                    ) : (
-                                        <Text color="red.600" mb="1em">Ingen HTML blev genereret. Prøv at uploade et billede igen.</Text>
-                                    )}
-                                    <Text fontSize="sm" color="gray.600" mb={1}>Antal DOM elementer: {domElementCountClassic}</Text>
-                                    <Box display="flex" alignItems="center" mb="0.5em">
-                                        <Button
-                                            size="sm"
-                                            colorScheme="cyan"
-                                            onClick={async () => {
-                                                try {
-                                                    await navigator.clipboard.writeText(imageHtmlSection);
-                                                    setErrorMessage("HTML kopieret!");
-                                                    setTimeout(() => setErrorMessage(null), 1200);
-                                                } catch {
-                                                    setErrorMessage("Kunne ikke kopiere HTML.");
-                                                    setTimeout(() => setErrorMessage(null), 1200);
-                                                }
-                                            }}
-                                            mr="1em"
-                                        >
-                                            Kopier HTML
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            colorScheme="green"
-                                            onClick={async () => {
-                                                await sendHtmlEmail(imageHtmlSection, "Mail Rendering - Klassisk metode");
-                                                setErrorMessage("Email sendt!");
-                                                setTimeout(() => setErrorMessage(null), 1200);
-                                            }}
-                                            mr="1em"
-                                        >
-                                            Send email
-                                        </Button>
-                                        {errorMessage && (
-                                            <Text color="cyan.700" fontSize="sm">
-                                                {errorMessage}
-                                            </Text>
-                                        )}
-                                    </Box>
-                                    <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
-                                        {imageHtmlSection || "Ingen HTML blev genereret."}
-                                    </Box>
-                                </Accordion.ItemBody>
-                            </Accordion.ItemContent>
-                        </Accordion.Item>
-                        <Accordion.Item value="horizontal">
-                            <Accordion.ItemTrigger>
-                                <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">Horisontal merge metode</Box>
-                                <Accordion.ItemIndicator />
-                            </Accordion.ItemTrigger>
-                            <Accordion.ItemContent>
-                                <Accordion.ItemBody>
-                                    <Text mb="1em">HTML genereret ved at slå sammen vandrette celler med samme farve til én td med colspan.</Text>
-                                    {imageHtmlSectionYBoundary ? (
-                                        <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionYBoundary }} />
-                                    ) : (
-                                        <Text color="red.600" mb="1em">Ingen HTML blev genereret. Prøv at uploade et billede igen.</Text>
-                                    )}
-                                    <Text fontSize="sm" color="gray.600" mb={1}>Antal DOM elementer: {domElementCountHorizontal}</Text>
-                                    <Box display="flex" alignItems="center" mb="0.5em">
-                                        <Button
-                                            size="sm"
-                                            colorScheme="cyan"
-                                            onClick={async () => {
-                                                try {
-                                                    await navigator.clipboard.writeText(imageHtmlSectionYBoundary);
-                                                    setErrorMessage("HTML kopieret!");
-                                                    setTimeout(() => setErrorMessage(null), 1200);
-                                                } catch {
-                                                    setErrorMessage("Kunne ikke kopiere HTML.");
-                                                    setTimeout(() => setErrorMessage(null), 1200);
-                                                }
-                                            }}
-                                            mr="1em"
-                                        >
-                                            Kopier HTML
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            colorScheme="green"
-                                            onClick={async () => {
-                                                await sendHtmlEmail(imageHtmlSectionYBoundary, "Mail Rendering - Horisontal merge metode");
-                                                setErrorMessage("Email sendt!");
-                                                setTimeout(() => setErrorMessage(null), 1200);
-                                            }}
-                                            mr="1em"
-                                        >
-                                            Send email
-                                        </Button>
-                                        {errorMessage && (
-                                            <Text color="cyan.700" fontSize="sm">
-                                                {errorMessage}
-                                            </Text>
-                                        )}
-                                    </Box>
-                                    <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
-                                        {imageHtmlSectionYBoundary || "Ingen HTML blev genereret."}
-                                    </Box>
-                                </Accordion.ItemBody>
-                            </Accordion.ItemContent>
-                        </Accordion.Item>
-                        <Accordion.Item value="simple">
-                            <Accordion.ItemTrigger>
-                                <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">Simpel 10% metode</Box>
-                                <Accordion.ItemIndicator />
-                            </Accordion.ItemTrigger>
-                            <Accordion.ItemContent>
-                                <Accordion.ItemBody>
-                                    <Text mb="1em">HTML genereret ved at skalere billedet til 10% og lave én celle pr. pixel, kun med horisontal merge.</Text>
-                                    {imageHtmlSectionSimple ? (
-                                        <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionSimple }} />
-                                    ) : (
-                                        <Text color="red.600" mb="1em">Ingen HTML blev genereret. Prøv at uploade et billede igen.</Text>
-                                    )}
-                                    <Text fontSize="sm" color="gray.600" mb={1}>Antal DOM elementer: {domElementCountSimple}</Text>
-                                    <Box display="flex" alignItems="center" mb="0.5em">
-                                        <Button
-                                            size="sm"
-                                            colorScheme="cyan"
-                                            onClick={async () => {
-                                                try {
-                                                    await navigator.clipboard.writeText(imageHtmlSectionSimple);
-                                                    setErrorMessage("HTML kopieret!");
-                                                    setTimeout(() => setErrorMessage(null), 1200);
-                                                } catch {
-                                                    setErrorMessage("Kunne ikke kopiere HTML.");
-                                                    setTimeout(() => setErrorMessage(null), 1200);
-                                                }
-                                            }}
-                                            mr="1em"
-                                        >
-                                            Kopier HTML
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            colorScheme="green"
-                                            onClick={async () => {
-                                                await sendHtmlEmail(imageHtmlSectionSimple, "Mail Rendering - Simpel 10% metode");
-                                                setErrorMessage("Email sendt!");
-                                                setTimeout(() => setErrorMessage(null), 1200);
-                                            }}
-                                            mr="1em"
-                                        >
-                                            Send email
-                                        </Button>
-                                        {errorMessage && (
-                                            <Text color="cyan.700" fontSize="sm">
-                                                {errorMessage}
-                                            </Text>
-                                        )}
-                                    </Box>
-                                    <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
-                                        {imageHtmlSectionSimple || "Ingen HTML blev genereret."}
-                                    </Box>
-                                </Accordion.ItemBody>
-                            </Accordion.ItemContent>
-                        </Accordion.Item>
-                        <Accordion.Item value="pixelgrid">
-                            <Accordion.ItemTrigger>
-                                <Box as="span" flex="1" textAlign="left" fontWeight="semibold" fontSize="18px">PixelGrid metode</Box>
-                                <Accordion.ItemIndicator />
-                            </Accordion.ItemTrigger>
-                            <Accordion.ItemContent>
-                                <Accordion.ItemBody>
-                                    <Text mb="1em">HTML genereret med én celle pr. pixel, ingen merging, 12-bit farver.</Text>
-                                    {imageHtmlSectionPixelGrid ? (
-                                        <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionPixelGrid }} />
-                                    ) : (
-                                        <Text color="red.600" mb="1em">Ingen HTML blev genereret. Prøv at uploade et billede igen.</Text>
-                                    )}
-                                    <Box display="flex" alignItems="center" mb="0.5em">
-                                        <Button
-                                            size="sm"
-                                            colorScheme="cyan"
-                                            onClick={async () => {
-                                                try {
-                                                    await navigator.clipboard.writeText(imageHtmlSectionPixelGrid);
-                                                    setErrorMessage("HTML kopieret!");
-                                                    setTimeout(() => setErrorMessage(null), 1200);
-                                                } catch {
-                                                    setErrorMessage("Kunne ikke kopiere HTML.");
-                                                    setTimeout(() => setErrorMessage(null), 1200);
-                                                }
-                                            }}
-                                            mr="1em"
-                                        >
-                                            Kopier HTML
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            colorScheme="green"
-                                            onClick={async () => {
-                                                await sendHtmlEmail(imageHtmlSectionPixelGrid, "Mail Rendering - PixelGrid metode");
-                                                setErrorMessage("Email sendt!");
-                                                setTimeout(() => setErrorMessage(null), 1200);
-                                            }}
-                                            mr="1em"
-                                        >
-                                            Send email
-                                        </Button>
-                                        {errorMessage && (
-                                            <Text color="cyan.700" fontSize="sm">
-                                                {errorMessage}
-                                            </Text>
-                                        )}
-                                    </Box>
-                                    <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
-                                        {imageHtmlSectionPixelGrid || "Ingen HTML blev genereret."}
-                                    </Box>
-                                </Accordion.ItemBody>
-                            </Accordion.ItemContent>
-                        </Accordion.Item>
-                    </Accordion.Root>
+                {imageHtmlSectionRectangleCover && (
+                    <Box mb="1.5em">
+                        <Heading as="h3" size="md" mb="0.5em">
+                            Rectangle Cover metode
+                        </Heading>
+                        <Text mb="1em">HTML genereret ved at dække billedet med størst mulige ensfarvede rektangler (maximal rectangles, greedy).</Text>
+                        <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionRectangleCover }} />
+                        <Box display="flex" alignItems="center" mb="0.5em">
+                            <Button
+                                size="sm"
+                                colorScheme="cyan"
+                                onClick={async () => {
+                                    try {
+                                        await navigator.clipboard.writeText(imageHtmlSectionRectangleCover);
+                                        setErrorMessage("HTML kopieret!");
+                                        setTimeout(() => setErrorMessage(null), 1200);
+                                    } catch {
+                                        setErrorMessage("Kunne ikke kopiere HTML.");
+                                        setTimeout(() => setErrorMessage(null), 1200);
+                                    }
+                                }}
+                                mr="1em"
+                            >
+                                Kopier HTML
+                            </Button>
+                            <Button
+                                size="sm"
+                                colorScheme="green"
+                                onClick={async () => {
+                                    await sendHtmlEmail(imageHtmlSectionRectangleCover, "Mail Rendering - Rectangle Cover metode");
+                                    setErrorMessage("Email sendt!");
+                                    setTimeout(() => setErrorMessage(null), 1200);
+                                }}
+                                mr="1em"
+                            >
+                                Send email
+                            </Button>
+                            {errorMessage && (
+                                <Text color="cyan.700" fontSize="sm">
+                                    {errorMessage}
+                                </Text>
+                            )}
+                        </Box>
+                        <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
+                            {imageHtmlSectionRectangleCover || "Ingen HTML blev genereret."}
+                        </Box>
+                    </Box>
                 )}
             </Box>
         </Container>
