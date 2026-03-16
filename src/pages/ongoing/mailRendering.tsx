@@ -1,3 +1,17 @@
+// --- CONFIGURATION ---
+const MAIL_RENDER_CONFIG = {
+    blurSigma: 1.5, // Gaussian blur strength
+    minCellSize: 2, // Minimum quadtree cell size
+    adaptiveVarianceThresholds: [
+        { threshold: 200, maxRect: 128 },
+        { threshold: 1200, maxRect: 64 },
+        { threshold: Infinity, maxRect: 32 },
+    ],
+    kMeansPaletteSize: 2048, // Number of colors for k-means quantization
+    widths: [150, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 325, 350, 375, 400, 450, 500, 700, 900, 1200, 1500, 2000],
+    maxKB: 900,
+    minKB: 870,
+};
 // Rectangle covering pipeline: maximal rectangles (greedy)
 function createHtmlSectionRectangleCover(result: TransformedImageResult, fileName: string | null): string {
     const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
@@ -83,7 +97,12 @@ function createHtmlSectionRectangleCover(result: TransformedImageResult, fileNam
         }
         tableRows += `<tr>${rowHtml}</tr>`;
     }
-    let html = `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;"><h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Rectangle Cover HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    let html = `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;">
+    <head>
+        <meta name="color-scheme" content="light">
+        <meta name="supported-color-schemes" content="light">
+    </head>
+    <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Rectangle Cover HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
     html = html.replace(/\n/g, '').replace(/\s{2,}/g, '').replace(/>\s+</g, '><');
     return html;
 }
@@ -133,7 +152,12 @@ function createHtmlSectionPixelGrid(result: TransformedImageResult, fileName: st
         }
         tableRows += `<tr>${rowHtml}</tr>`;
     }
-    let html = `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;"><h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">PixelGrid HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    let html = `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;">
+    <head>
+        <meta name="color-scheme" content="light">
+        <meta name="supported-color-schemes" content="light">
+    </head>
+    <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">PixelGrid HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
     html = html.replace(/\n/g, '').replace(/\s{2,}/g, '').replace(/>\s+</g, '><');
     return html;
 }
@@ -203,7 +227,12 @@ function createHtmlSectionSimple10pct(file: File | null, fileName: string | null
                 }
                 tableRows += `<tr>${rowHtml}</tr>`;
             }
-            resolve(`<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;"><h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Simple 10% Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${targetWidth}" height="${targetHeight}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`);
+            resolve(`<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;">
+    <head>
+        <meta name="color-scheme" content="light">
+        <meta name="supported-color-schemes" content="light">
+    </head>
+    <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Simple 10% Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${targetWidth}" height="${targetHeight}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`);
         } catch (error) {
             resolve("");
         }
@@ -255,7 +284,12 @@ function createHtmlSectionYBoundary(result: TransformedImageResult, fileName: st
         }
         tableRows += `<tr>${rowHtml}</tr>`;
     }
-    return `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;"><h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Horisontal Merge Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    return `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;">
+    <head>
+        <meta name="color-scheme" content="light">
+        <meta name="supported-color-schemes" content="light">
+    </head>
+    <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Horisontal Merge Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
 }
 // Merge adjacent rectangles with same color horizontally and vertically
 function mergeRectangles(cells: QuadCell[], width: number, height: number): QuadCell[] {
@@ -326,7 +360,7 @@ import { Box, Button, Container, Heading, Text, Breadcrumb, Image as ChakraImage
 // Placeholder for Resend integration
 async function sendHtmlEmail(html: string, subject: string) {
     // POST to backend route instead of calling Resend directly
-    const recipient = "christengc@gmail.com";
+    const recipients = ["christengc@gmail.com", "christenchristensen@live.dk"];
     const sender = "test@christenchristensen.dk";
     const response = await fetch("/api/send-mail", {
         method: "POST",
@@ -335,7 +369,7 @@ async function sendHtmlEmail(html: string, subject: string) {
         },
         body: JSON.stringify({
             from: sender,
-            to: recipient,
+            to: recipients,
             subject,
             html
         })
@@ -399,6 +433,59 @@ function loadImage(dataUrl: string): Promise<HTMLImageElement> {
     });
 }
 
+// Helper: RGB to XYZ
+function rgbToXyz(r: number, g: number, b: number) {
+    // Convert sRGB to linear
+    function srgbToLinear(c: number) {
+        c = c / 255;
+        return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    }
+    r = srgbToLinear(r);
+    g = srgbToLinear(g);
+    b = srgbToLinear(b);
+    // Observer = 2°, Illuminant = D65
+    const x = r * 0.4124 + g * 0.3576 + b * 0.1805;
+    const y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+    const z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+    return [x, y, z];
+}
+
+// Helper: XYZ to Lab
+function xyzToLab(x: number, y: number, z: number) {
+    // D65 reference white
+    const refX = 0.95047;
+    const refY = 1.00000;
+    const refZ = 1.08883;
+    x = x / refX;
+    y = y / refY;
+    z = z / refZ;
+    function f(t: number) {
+        return t > 0.008856 ? Math.cbrt(t) : (7.787 * t) + 16 / 116;
+    }
+    const fx = f(x);
+    const fy = f(y);
+    const fz = f(z);
+    const L = 116 * fy - 16;
+    const a = 500 * (fx - fy);
+    const b = 200 * (fy - fz);
+    return [L, a, b];
+}
+
+// Helper: RGB to Lab
+function rgbToLab(r: number, g: number, b: number) {
+    const [x, y, z] = rgbToXyz(r, g, b);
+    return xyzToLab(x, y, z);
+}
+
+// Helper: DeltaE (CIE76)
+function deltaE(lab1: [number, number, number], lab2: [number, number, number]) {
+    return Math.sqrt(
+        Math.pow(lab1[0] - lab2[0], 2) +
+        Math.pow(lab1[1] - lab2[1], 2) +
+        Math.pow(lab1[2] - lab2[2], 2)
+    );
+}
+
 function calculateRegionStats(imageData: Uint8ClampedArray, imageWidth: number, imageHeight: number, x: number, y: number, size: number) {
     const endX = Math.min(x + size, imageWidth);
     const endY = Math.min(y + size, imageHeight);
@@ -407,27 +494,20 @@ function calculateRegionStats(imageData: Uint8ClampedArray, imageWidth: number, 
         return null;
     }
 
-    let sumR = 0;
-    let sumG = 0;
-    let sumB = 0;
-    let sumSqR = 0;
-    let sumSqG = 0;
-    let sumSqB = 0;
-    let count = 0;
+    let sumL = 0, sumA = 0, sumB = 0, count = 0;
+    const labPixels: [number, number, number][] = [];
 
     for (let row = y; row < endY; row++) {
         for (let column = x; column < endX; column++) {
             const index = (row * imageWidth + column) * 4;
-            const red = imageData[index];
-            const green = imageData[index + 1];
-            const blue = imageData[index + 2];
-
-            sumR += red;
-            sumG += green;
-            sumB += blue;
-            sumSqR += red * red;
-            sumSqG += green * green;
-            sumSqB += blue * blue;
+            const r = imageData[index];
+            const g = imageData[index + 1];
+            const b = imageData[index + 2];
+            const lab = rgbToLab(r, g, b);
+            sumL += lab[0];
+            sumA += lab[1];
+            sumB += lab[2];
+            labPixels.push(lab);
             count++;
         }
     }
@@ -436,19 +516,38 @@ function calculateRegionStats(imageData: Uint8ClampedArray, imageWidth: number, 
         return null;
     }
 
+    const avgL = sumL / count;
+    const avgA = sumA / count;
+    const avgB_ = sumB / count;
+    const avgLab: [number, number, number] = [avgL, avgA, avgB_];
+
+    // Perceptual variance: mean squared ΔE to mean
+    let sumDeltaE2 = 0;
+    for (let i = 0; i < labPixels.length; i++) {
+        const dE = deltaE(labPixels[i], avgLab);
+        sumDeltaE2 += dE * dE;
+    }
+    const variance = sumDeltaE2 / count;
+
+    // For output color, use mean RGB (for compatibility with rest of pipeline)
+    let sumR = 0, sumG = 0, sumB2 = 0;
+    for (let row = y; row < endY; row++) {
+        for (let column = x; column < endX; column++) {
+            const index = (row * imageWidth + column) * 4;
+            sumR += imageData[index];
+            sumG += imageData[index + 1];
+            sumB2 += imageData[index + 2];
+        }
+    }
     const avgR = sumR / count;
     const avgG = sumG / count;
-    const avgB = sumB / count;
-
-    const varianceR = sumSqR / count - avgR * avgR;
-    const varianceG = sumSqG / count - avgG * avgG;
-    const varianceB = sumSqB / count - avgB * avgB;
+    const avgB = sumB2 / count;
 
     return {
         avgR,
         avgG,
         avgB,
-        variance: varianceR + varianceG + varianceB,
+        variance,
         width: endX - x,
         height: endY - y,
     };
@@ -457,15 +556,16 @@ function calculateRegionStats(imageData: Uint8ClampedArray, imageWidth: number, 
 function buildQuadtreeCells(imageData: ImageData): QuadCell[] {
     const { width, height, data } = imageData;
     const rootSize = nextPowerOfTwo(Math.max(width, height));
-    const minCellSize = 2;
+    const minCellSize = MAIL_RENDER_CONFIG.minCellSize;
     const maxDepth = Math.max(1, Math.ceil(Math.log2(rootSize)));
     const cells: QuadCell[] = [];
 
     // Adaptive max rectangle size based on variance
     function getAdaptiveMaxRect(variance: number) {
-        if (variance < 200) return 128; // very low
-        if (variance < 1200) return 64; // medium
-        return 32; // high
+        for (const entry of MAIL_RENDER_CONFIG.adaptiveVarianceThresholds) {
+            if (variance < entry.threshold) return entry.maxRect;
+        }
+        return 32; // fallback
     }
 
     const visitNode = (x: number, y: number, size: number, depth: number) => {
@@ -570,7 +670,12 @@ function createHtmlSectionFromQuadCells(result: TransformedImageResult, fileName
         tableRows += `<tr>${rowHtml}</tr>`;
     }
     // Minify HTML: remove newlines, spaces, indentation
-    let html = `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;"><h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Quadtree HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    let html = `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;">
+    <head>
+        <meta name="color-scheme" content="light">
+        <meta name="supported-color-schemes" content="light">
+    </head>
+    <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Quadtree HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
     html = html.replace(/\n/g, '').replace(/\s{2,}/g, '').replace(/>\s+</g, '><');
     return html;
 }
@@ -583,17 +688,17 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                 const image = await loadImage(dataUrl);
 
                 // Iterativt juster opløsning for at holde filstørrelse under ca. 100 KB
-                const maxKB = 300;
-                const minKB = 290;
+                const maxKB = MAIL_RENDER_CONFIG.maxKB;
+                const minKB = MAIL_RENDER_CONFIG.minKB;
                 const maxChars = maxKB * 1000;
                 const minChars = minKB * 1000;
                 const aspectRatio = image.width / image.height;
-                const widths = [150, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 325, 350, 375, 400, 450, 500, 700, 900, 1200, 1500, 2000];
+                const widths = MAIL_RENDER_CONFIG.widths;
                 let prevResult: TransformedImageResult | null = null;
                 let prevChars = 0;
                 // Første step: Gaussian blur på originalt billede
                 // Tegn originalbilledet over på et midlertidigt canvas med blur
-                const blurSigma = 0.8;
+                const blurSigma = MAIL_RENDER_CONFIG.blurSigma;
                 const blurCanvas = document.createElement("canvas");
                 blurCanvas.width = image.width;
                 blurCanvas.height = image.height;
@@ -627,7 +732,7 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                     const pixels = context.getImageData(0, 0, targetWidth, targetHeight);
                     let cells = buildQuadtreeCells(pixels);
 
-                    // Kvantisér farver efter quadtree vha. k-means (palette på 100 farver)
+                    // Kvantisér farver efter quadtree vha. k-means (palette på kMeansPaletteSize farver)
                     const quantizeColorsKMeans = (cells: QuadCell[], k: number): QuadCell[] => {
                         // Saml alle farver
                         const colors = cells.map(cell => {
@@ -680,7 +785,7 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                             return { ...cell, color: `rgb(${c[0]}, ${c[1]}, ${c[2]})` };
                         });
                     };
-                    cells = quantizeColorsKMeans(cells, 1024);
+                    cells = quantizeColorsKMeans(cells, MAIL_RENDER_CONFIG.kMeansPaletteSize);
 
                     const mergedCount = mergeRectangles(cells, targetWidth, targetHeight).length;
                     const estimatedChars = mergedCount * 46;
@@ -892,7 +997,6 @@ export default function MailRendering() {
                             <Button
                                 size="sm"
                                 colorScheme="green"
-                                style={{ display: 'none' }}
                                 onClick={async () => {
                                     await sendHtmlEmail(imageHtmlSectionRectangleCover, "Mail Rendering - Rectangle Cover metode");
                                     setErrorMessage("Email sendt!");
