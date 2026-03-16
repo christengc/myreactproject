@@ -457,10 +457,16 @@ function calculateRegionStats(imageData: Uint8ClampedArray, imageWidth: number, 
 function buildQuadtreeCells(imageData: ImageData): QuadCell[] {
     const { width, height, data } = imageData;
     const rootSize = nextPowerOfTwo(Math.max(width, height));
-    const minCellSize = 4;
-    const varianceThreshold = 1200; // Increased for coarser rectangles
+    const minCellSize = 2;
     const maxDepth = Math.max(1, Math.ceil(Math.log2(rootSize)));
     const cells: QuadCell[] = [];
+
+    // Adaptive max rectangle size based on variance
+    function getAdaptiveMaxRect(variance: number) {
+        if (variance < 200) return 128; // very low
+        if (variance < 1200) return 64; // medium
+        return 32; // high
+    }
 
     const visitNode = (x: number, y: number, size: number, depth: number) => {
         const stats = calculateRegionStats(data, width, height, x, y, size);
@@ -468,23 +474,25 @@ function buildQuadtreeCells(imageData: ImageData): QuadCell[] {
             return;
         }
 
-        const shouldSplit = size > minCellSize && depth < maxDepth && stats.variance > varianceThreshold;
-        if (!shouldSplit) {
-            cells.push({
-                x,
-                y,
-                width: stats.width,
-                height: stats.height,
-                color: `rgb(${Math.round(stats.avgR)}, ${Math.round(stats.avgG)}, ${Math.round(stats.avgB)})`,
-            });
-            return;
+        const adaptiveMaxRect = getAdaptiveMaxRect(stats.variance);
+        // Split hvis størrelsen er større end adaptiveMaxRect, eller hvis størrelsen er større end minCellSize
+        if (size > adaptiveMaxRect || size > minCellSize) {
+            if (size > minCellSize) {
+                const half = Math.max(1, Math.floor(size / 2));
+                visitNode(x, y, half, depth + 1);
+                visitNode(x + half, y, half, depth + 1);
+                visitNode(x, y + half, half, depth + 1);
+                visitNode(x + half, y + half, half, depth + 1);
+                return;
+            }
         }
-
-        const half = Math.max(1, Math.floor(size / 2));
-        visitNode(x, y, half, depth + 1);
-        visitNode(x + half, y, half, depth + 1);
-        visitNode(x, y + half, half, depth + 1);
-        visitNode(x + half, y + half, half, depth + 1);
+        cells.push({
+            x,
+            y,
+            width: stats.width,
+            height: stats.height,
+            color: `rgb(${Math.round(stats.avgR)}, ${Math.round(stats.avgG)}, ${Math.round(stats.avgB)})`,
+        });
     };
 
     visitNode(0, 0, rootSize, 0);
@@ -574,35 +582,133 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                 const dataUrl = await readFileAsDataUrl(file);
                 const image = await loadImage(dataUrl);
 
-                // Adaptiv nedskallering: forsøg at ramme ca. 90.000 pixels
-                const targetPixels = 90000;
+                // Iterativt juster opløsning for at holde filstørrelse under ca. 100 KB
+                const maxKB = 300;
+                const minKB = 290;
+                const maxChars = maxKB * 1000;
+                const minChars = minKB * 1000;
                 const aspectRatio = image.width / image.height;
-                // Udregn optimal bredde og højde
-                let targetWidth = Math.sqrt(targetPixels * aspectRatio);
-                let targetHeight = Math.sqrt(targetPixels / aspectRatio);
-                targetWidth = Math.max(1, Math.floor(targetWidth));
-                targetHeight = Math.max(1, Math.floor(targetHeight));
-                // Begræns til original størrelse
-                targetWidth = Math.min(targetWidth, image.width);
-                targetHeight = Math.min(targetHeight, image.height);
-
-                const canvas = document.createElement("canvas");
-                canvas.width = targetWidth;
-                canvas.height = targetHeight;
-
-                const context = canvas.getContext("2d", { willReadFrequently: true });
-                if (!context) {
-                    reject(new Error("Canvas context could not be created."));
+                const widths = [150, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 325, 350, 375, 400, 450, 500, 700, 900, 1200, 1500, 2000];
+                let prevResult: TransformedImageResult | null = null;
+                let prevChars = 0;
+                // Første step: Gaussian blur på originalt billede
+                // Tegn originalbilledet over på et midlertidigt canvas med blur
+                const blurSigma = 0.8;
+                const blurCanvas = document.createElement("canvas");
+                blurCanvas.width = image.width;
+                blurCanvas.height = image.height;
+                const blurCtx = blurCanvas.getContext("2d");
+                if (!blurCtx) {
+                    reject(new Error("Canvas context for blur could not be created."));
                     return;
                 }
+                blurCtx.filter = `blur(${blurSigma}px)`;
+                blurCtx.drawImage(image, 0, 0, image.width, image.height);
 
-                context.imageSmoothingEnabled = true;
-                context.drawImage(image, 0, 0, targetWidth, targetHeight);
+                for (let i = 0; i < widths.length; i++) {
+                    let targetWidth = Math.min(widths[i], image.width);
+                    let targetHeight = Math.max(1, Math.floor(targetWidth / aspectRatio));
+                    targetHeight = Math.min(targetHeight, image.height);
 
-                const pixels = context.getImageData(0, 0, targetWidth, targetHeight);
-                const cells = buildQuadtreeCells(pixels);
+                    const canvas = document.createElement("canvas");
+                    canvas.width = targetWidth;
+                    canvas.height = targetHeight;
 
-                resolve({ width: targetWidth, height: targetHeight, cells });
+                    const context = canvas.getContext("2d", { willReadFrequently: true });
+                    if (!context) {
+                        reject(new Error("Canvas context could not be created."));
+                        return;
+                    }
+
+                    context.imageSmoothingEnabled = true;
+                    // Brug det slørede billede som input til nedskalering
+                    context.drawImage(blurCanvas, 0, 0, image.width, image.height, 0, 0, targetWidth, targetHeight);
+
+                    const pixels = context.getImageData(0, 0, targetWidth, targetHeight);
+                    let cells = buildQuadtreeCells(pixels);
+
+                    // Kvantisér farver efter quadtree vha. k-means (palette på 100 farver)
+                    const quantizeColorsKMeans = (cells: QuadCell[], k: number): QuadCell[] => {
+                        // Saml alle farver
+                        const colors = cells.map(cell => {
+                            const match = cell.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                            if (!match) return [0,0,0];
+                            return [parseInt(match[1],10), parseInt(match[2],10), parseInt(match[3],10)];
+                        });
+                        // Initier k tilfældige farver som centroids
+                        const centroids = colors.slice(0, k);
+                        while (centroids.length < k && colors.length > 0) {
+                            centroids.push(colors[Math.floor(Math.random()*colors.length)]);
+                        }
+                        let changed = true;
+                        let assignments = new Array(colors.length).fill(0);
+                        let iter = 0;
+                        while (changed && iter < 10) {
+                            changed = false;
+                            // Assign
+                            for (let i = 0; i < colors.length; i++) {
+                                let minDist = Infinity, minIdx = 0;
+                                for (let c = 0; c < centroids.length; c++) {
+                                    const d = Math.pow(colors[i][0]-centroids[c][0],2)+Math.pow(colors[i][1]-centroids[c][1],2)+Math.pow(colors[i][2]-centroids[c][2],2);
+                                    if (d < minDist) { minDist = d; minIdx = c; }
+                                }
+                                if (assignments[i] !== minIdx) { changed = true; assignments[i] = minIdx; }
+                            }
+                            // Update centroids
+                            const sums = Array.from({length:k},()=>[0,0,0,0]);
+                            for (let i = 0; i < colors.length; i++) {
+                                const c = assignments[i];
+                                sums[c][0] += colors[i][0];
+                                sums[c][1] += colors[i][1];
+                                sums[c][2] += colors[i][2];
+                                sums[c][3] += 1;
+                            }
+                            for (let c = 0; c < k; c++) {
+                                if (sums[c][3] > 0) {
+                                    centroids[c] = [
+                                        Math.round(sums[c][0]/sums[c][3]),
+                                        Math.round(sums[c][1]/sums[c][3]),
+                                        Math.round(sums[c][2]/sums[c][3])
+                                    ];
+                                }
+                            }
+                            iter++;
+                        }
+                        // Erstat farver i celler med nærmeste centroid
+                        return cells.map((cell, i) => {
+                            const c = centroids[assignments[i]];
+                            return { ...cell, color: `rgb(${c[0]}, ${c[1]}, ${c[2]})` };
+                        });
+                    };
+                    cells = quantizeColorsKMeans(cells, 1024);
+
+                    const mergedCount = mergeRectangles(cells, targetWidth, targetHeight).length;
+                    const estimatedChars = mergedCount * 46;
+                    const estimatedKB = estimatedChars / 1000;
+
+                    // Log resolution and estimated size for each iteration
+                    console.log(`Iteration ${i + 1}: width=${targetWidth}, height=${targetHeight}, mergedRectangles=${mergedCount}, estimatedChars=${estimatedChars}, estimatedKB=${estimatedKB.toFixed(2)}`);
+
+                    if (estimatedKB > maxKB && prevResult) {
+                        // Log the oversized attempt as well
+                        console.log(`Oversized attempt: width=${targetWidth}, height=${targetHeight}, mergedRectangles=${mergedCount}, estimatedChars=${estimatedChars}, estimatedKB=${estimatedKB.toFixed(2)}`);
+                        resolve(prevResult);
+                        return;
+                    }
+                    prevResult = { width: targetWidth, height: targetHeight, cells };
+                    prevChars = estimatedChars;
+                }
+                // Hvis ingen kom over 100 KB, brug den største
+                if (prevResult) {
+                    // Log the final oversized attempt if it was never resolved
+                    const mergedCount = mergeRectangles(prevResult.cells, prevResult.width, prevResult.height).length;
+                    const estimatedChars = mergedCount * 46;
+                    const estimatedKB = estimatedChars / 1000;
+                    console.log(`Final attempt: width=${prevResult.width}, height=${prevResult.height}, mergedRectangles=${mergedCount}, estimatedChars=${estimatedChars}, estimatedKB=${estimatedKB.toFixed(2)}`);
+                    resolve(prevResult);
+                } else {
+                    reject(new Error("Image transformation failed."));
+                }
             } catch (error) {
                 reject(error instanceof Error ? error : new Error("Image transformation failed."));
             }
@@ -622,6 +728,13 @@ export default function MailRendering() {
         if (!transformedResult) return "";
         return createHtmlSectionRectangleCover(transformedResult, selectedFile?.name ?? null);
     }, [selectedFile, transformedResult]);
+
+    // Beregn mergeRectangles hvis transformedResult findes
+    const mergedRectanglesCount = useMemo(() => {
+        if (!transformedResult) return 0;
+        // mergeRectangles kræver width, height, cells
+        return mergeRectangles(transformedResult.cells, transformedResult.width, transformedResult.height).length;
+    }, [transformedResult]);
 
     const handleImageUpload = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -735,8 +848,19 @@ export default function MailRendering() {
                             Rectangle Cover data
                         </Heading>
                         <Text color="#2B4570">
-                            {`Rectangles: ${transformedResult.cells.length} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
+                            {`Rectangles før merge: ${transformedResult.cells.length} | efter merge: ${mergedRectanglesCount} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
                         </Text>
+                        <Text color="#2B4570" fontSize="sm">
+                            {`Estimeret filstørrelse: ${(mergedRectanglesCount * 46).toLocaleString()} karakterer (baseret på merged)`}
+                        </Text>
+                        <Text color="#2B4570" fontSize="sm">
+                            {`≈ ${(Math.round((mergedRectanglesCount * 46) / 1000)).toLocaleString()} KB`}
+                        </Text>
+                        {mergedRectanglesCount * 46 > 100000 && (
+                            <Text color="red.600" fontSize="sm" fontWeight="bold">
+                                Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med nuværende opløsning.
+                            </Text>
+                        )}
                     </Box>
                 )}
 
