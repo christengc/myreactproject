@@ -1,16 +1,16 @@
 // --- CONFIGURATION ---
 const MAIL_RENDER_CONFIG = {
     blurSigma: 1.5, // Gaussian blur strength
-    minCellSize: 2, // Minimum quadtree cell size
+    minCellSize: 4, // Minimum quadtree cell size
     adaptiveVarianceThresholds: [
         { threshold: 200, maxRect: 128 },
         { threshold: 1200, maxRect: 64 },
         { threshold: Infinity, maxRect: 32 },
     ],
-    kMeansPaletteSize: 2048, // Number of colors for k-means quantization
+    kMeansPaletteSize: 1024, // Number of colors for k-means quantization
     widths: [150, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 325, 350, 375, 400, 450, 500, 700, 900, 1200, 1500, 2000],
-    maxKB: 900,
-    minKB: 870,
+    maxKB: 90,
+    minKB: 80,
 };
 // Rectangle covering pipeline: maximal rectangles (greedy)
 function createHtmlSectionRectangleCover(result: TransformedImageResult, fileName: string | null): string {
