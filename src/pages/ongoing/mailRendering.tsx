@@ -1,18 +1,519 @@
 // --- CONFIGURATION ---
 const MAIL_RENDER_CONFIG = {
     blurSigma: 1.5, // Gaussian blur strength
-    minCellSize: 4, // Minimum quadtree cell size
+    minCellSize: 1, // Minimum quadtree cell size
     adaptiveVarianceThresholds: [
         { threshold: 200, maxRect: 128 },
         { threshold: 1200, maxRect: 64 },
         { threshold: Infinity, maxRect: 32 },
     ],
-    kMeansPaletteSize: 1024, // Number of colors for k-means quantization
-    widths: [150, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 325, 350, 375, 400, 450, 500, 700, 900, 1200, 1500, 2000],
-    maxKB: 90,
-    minKB: 80,
+    kMeansPaletteSize: 16184, // Number of colors for k-means quantization
+    widths: [350, 370],
+    maxKB: 300,
+    minKB: 270,
 };
 // Rectangle covering pipeline: maximal rectangles (greedy)
+// Alternative pipeline: error-driven BSP partition
+
+// --- BSP Partition rectangle count for a given cell grid ---
+function countBspRectsFromCells(cells: QuadCell[], width: number, height: number): number {
+    // Build grid
+    const grid: string[][] = Array.from({ length: height }, () => Array(width).fill(""));
+    cells.forEach(cell => {
+        for (let dy = 0; dy < cell.height; dy++) {
+            for (let dx = 0; dx < cell.width; dx++) {
+                const y = cell.y + dy;
+                const x = cell.x + dx;
+                if (y < height && x < width) {
+                    grid[y][x] = cell.color;
+                }
+            }
+        }
+    });
+    // BSP partition logic (copied from useMemo)
+    const minSize = 4;
+    const errorThreshold = 12000;
+    type BSPNode = {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        color: string;
+        error: number;
+        left?: BSPNode;
+        right?: BSPNode;
+        splitDir?: 'horizontal' | 'vertical';
+        splitPos?: number;
+    };
+    function regionStats(x: number, y: number, w: number, h: number): { color: string; error: number } {
+        let sumR = 0, sumG = 0, sumB = 0, count = 0;
+        let error = 0;
+        for (let row = y; row < y + h; row++) {
+            for (let col = x; col < x + w; col++) {
+                const rgbMatch = grid[row][col].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                let r = 0, g = 0, b = 0;
+                if (rgbMatch) {
+                    r = parseInt(rgbMatch[1], 10);
+                    g = parseInt(rgbMatch[2], 10);
+                    b = parseInt(rgbMatch[3], 10);
+                }
+                sumR += r;
+                sumG += g;
+                sumB += b;
+                count++;
+            }
+        }
+        if (!count) return { color: 'rgb(0,0,0)', error: 0 };
+        const avgR = Math.round(sumR / count);
+        const avgG = Math.round(sumG / count);
+        const avgB = Math.round(sumB / count);
+        for (let row = y; row < y + h; row++) {
+            for (let col = x; col < x + w; col++) {
+                const rgbMatch = grid[row][col].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                let r = 0, g = 0, b = 0;
+                if (rgbMatch) {
+                    r = parseInt(rgbMatch[1], 10);
+                    g = parseInt(rgbMatch[2], 10);
+                    b = parseInt(rgbMatch[3], 10);
+                }
+                error += Math.pow(r - avgR, 2) + Math.pow(g - avgG, 2) + Math.pow(b - avgB, 2);
+            }
+        }
+        return { color: `rgb(${avgR}, ${avgG}, ${avgB})`, error };
+    }
+    function bspPartition(x: number, y: number, w: number, h: number, minSize: number, errorThreshold: number): BSPNode {
+        const { color, error } = regionStats(x, y, w, h);
+        if (w <= minSize && h <= minSize || error < errorThreshold) {
+            return { x, y, width: w, height: h, color, error };
+        }
+        let bestSplit: { dir: 'horizontal' | 'vertical'; pos: number; error: number } | null = null;
+        for (let split = 1; split < w; split++) {
+            const leftStats = regionStats(x, y, split, h);
+            const rightStats = regionStats(x + split, y, w - split, h);
+            const totalError = leftStats.error + rightStats.error;
+            if (!bestSplit || totalError < bestSplit.error) {
+                bestSplit = { dir: 'vertical', pos: split, error: totalError };
+            }
+        }
+        for (let split = 1; split < h; split++) {
+            const topStats = regionStats(x, y, w, split);
+            const bottomStats = regionStats(x, y + split, w, h - split);
+            const totalError = topStats.error + bottomStats.error;
+            if (!bestSplit || totalError < bestSplit.error) {
+                bestSplit = { dir: 'horizontal', pos: split, error: totalError };
+            }
+        }
+        if (!bestSplit) {
+            return { x, y, width: w, height: h, color, error };
+        }
+        if (bestSplit.dir === 'vertical') {
+            return {
+                x, y, width: w, height: h, color, error,
+                splitDir: 'vertical', splitPos: bestSplit.pos,
+                left: bspPartition(x, y, bestSplit.pos, h, minSize, errorThreshold),
+                right: bspPartition(x + bestSplit.pos, y, w - bestSplit.pos, h, minSize, errorThreshold)
+            };
+        } else {
+            return {
+                x, y, width: w, height: h, color, error,
+                splitDir: 'horizontal', splitPos: bestSplit.pos,
+                left: bspPartition(x, y, w, bestSplit.pos, minSize, errorThreshold),
+                right: bspPartition(x, y + bestSplit.pos, w, h - bestSplit.pos, minSize, errorThreshold)
+            };
+        }
+    }
+    function collectRects(node: BSPNode, rects: BSPNode[]) {
+        if (!node.left && !node.right) {
+            rects.push(node);
+        } else {
+            if (node.left) collectRects(node.left, rects);
+            if (node.right) collectRects(node.right, rects);
+        }
+    }
+    const root = bspPartition(0, 0, width, height, minSize, errorThreshold);
+    const rects: BSPNode[] = [];
+    collectRects(root, rects);
+    return rects.length;
+}
+
+// --- BSP-aware transformImage ---
+function transformImageBSP(file: File): Promise<TransformedImageResult> {
+    return new Promise((resolve, reject) => {
+        void (async () => {
+            try {
+                const dataUrl = await readFileAsDataUrl(file);
+                const image = await loadImage(dataUrl);
+
+                const maxKB = MAIL_RENDER_CONFIG.maxKB;
+                const aspectRatio = image.width / image.height;
+                const widths = MAIL_RENDER_CONFIG.widths;
+                const blurSigma = MAIL_RENDER_CONFIG.blurSigma;
+                const blurCanvas = document.createElement("canvas");
+                blurCanvas.width = image.width;
+                blurCanvas.height = image.height;
+                const blurCtx = blurCanvas.getContext("2d");
+                if (!blurCtx) {
+                    reject(new Error("Canvas context for blur could not be created."));
+                    return;
+                }
+                blurCtx.filter = `blur(${blurSigma}px)`;
+                blurCtx.drawImage(image, 0, 0, image.width, image.height);
+
+                let prevResult: TransformedImageResult | null = null;
+                let prevKB = 0;
+                for (let i = 0; i < widths.length; i++) {
+                    let targetWidth = Math.min(widths[i], image.width);
+                    let targetHeight = Math.max(1, Math.floor(targetWidth / aspectRatio));
+                    targetHeight = Math.min(targetHeight, image.height);
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = targetWidth;
+                    canvas.height = targetHeight;
+
+                    const context = canvas.getContext("2d", { willReadFrequently: true });
+                    if (!context) {
+                        reject(new Error("Canvas context could not be created."));
+                        return;
+                    }
+
+                    context.imageSmoothingEnabled = true;
+                    context.drawImage(blurCanvas, 0, 0, image.width, image.height, 0, 0, targetWidth, targetHeight);
+
+                    const pixels = context.getImageData(0, 0, targetWidth, targetHeight);
+                    let cells = buildQuadtreeCells(pixels);
+                    // Kvantisér farver efter quadtree vha. k-means (palette på kMeansPaletteSize farver)
+                    const quantizeColorsKMeans = (cells: QuadCell[], k: number): QuadCell[] => {
+                        const colors = cells.map(cell => {
+                            const match = cell.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                            if (!match) return [0,0,0];
+                            return [parseInt(match[1],10), parseInt(match[2],10), parseInt(match[3],10)];
+                        });
+                        const centroids = colors.slice(0, k);
+                        while (centroids.length < k && colors.length > 0) {
+                            centroids.push(colors[Math.floor(Math.random()*colors.length)]);
+                        }
+                        let changed = true;
+                        let assignments = new Array(colors.length).fill(0);
+                        let iter = 0;
+                        while (changed && iter < 10) {
+                            changed = false;
+                            for (let i = 0; i < colors.length; i++) {
+                                let minDist = Infinity, minIdx = 0;
+                                for (let c = 0; c < centroids.length; c++) {
+                                    const d = Math.pow(colors[i][0]-centroids[c][0],2)+Math.pow(colors[i][1]-centroids[c][1],2)+Math.pow(colors[i][2]-centroids[c][2],2);
+                                    if (d < minDist) { minDist = d; minIdx = c; }
+                                }
+                                if (assignments[i] !== minIdx) { changed = true; assignments[i] = minIdx; }
+                            }
+                            const sums = Array.from({length:k},()=>[0,0,0,0]);
+                            for (let i = 0; i < colors.length; i++) {
+                                const c = assignments[i];
+                                sums[c][0] += colors[i][0];
+                                sums[c][1] += colors[i][1];
+                                sums[c][2] += colors[i][2];
+                                sums[c][3] += 1;
+                            }
+                            for (let c = 0; c < k; c++) {
+                                if (sums[c][3] > 0) {
+                                    centroids[c] = [
+                                        Math.round(sums[c][0]/sums[c][3]),
+                                        Math.round(sums[c][1]/sums[c][3]),
+                                        Math.round(sums[c][2]/sums[c][3])
+                                    ];
+                                }
+                            }
+                            iter++;
+                        }
+                        return cells.map((cell, i) => {
+                            const c = centroids[assignments[i]];
+                            return { ...cell, color: `rgb(${c[0]}, ${c[1]}, ${c[2]})` };
+                        });
+                    };
+                    cells = quantizeColorsKMeans(cells, MAIL_RENDER_CONFIG.kMeansPaletteSize);
+
+                    const bspRects = countBspRectsFromCells(cells, targetWidth, targetHeight);
+                    const estimatedChars = bspRects * 46;
+                    const estimatedKB = estimatedChars / 1000;
+
+                    console.log(`BSP Iteration ${i + 1}: width=${targetWidth}, height=${targetHeight}, kMeansPaletteSize=${MAIL_RENDER_CONFIG.kMeansPaletteSize}, bspRects=${bspRects}, estimatedChars=${estimatedChars}, estimatedKB=${estimatedKB.toFixed(2)}`);
+
+                    if (estimatedKB > maxKB && prevResult) {
+                        console.log(`BSP Oversized attempt: width=${targetWidth}, height=${targetHeight}, bspRects=${bspRects}, estimatedKB=${estimatedKB.toFixed(2)}`);
+                        resolve(prevResult);
+                        return;
+                    }
+                    prevResult = { width: targetWidth, height: targetHeight, cells };
+                    prevKB = estimatedKB;
+                }
+                // Hvis ingen kom over grænsen, brug den største
+                if (prevResult) {
+                    const bspRects = countBspRectsFromCells(prevResult.cells, prevResult.width, prevResult.height);
+                    const estimatedKB = (bspRects * 46) / 1000;
+                    console.log(`BSP Final attempt: width=${prevResult.width}, height=${prevResult.height}, bspRects=${bspRects}, estimatedKB=${estimatedKB.toFixed(2)}`);
+                    resolve(prevResult);
+                } else {
+                    reject(new Error("Image transformation failed."));
+                }
+            } catch (error) {
+                reject(error instanceof Error ? error : new Error("Image transformation failed."));
+            }
+        })();
+    });
+}
+function createHtmlSectionBSPPartition(result: TransformedImageResult, fileName: string | null): string {
+        // Multi-pass rectangle merging for BSP rectangles
+        function multiPassMerge(rects: BSPNode[], width: number, height: number): BSPNode[] {
+            let merged = rects.slice();
+            let changed = true;
+            while (changed) {
+                changed = false;
+                // Horizontal merge
+                let horMerged: BSPNode[] = [];
+                const used = new Set<number>();
+                for (let i = 0; i < merged.length; i++) {
+                    if (used.has(i)) continue;
+                    let r1 = merged[i];
+                    let mergedRect = r1;
+                    for (let j = 0; j < merged.length; j++) {
+                        if (i === j || used.has(j)) continue;
+                        let r2 = merged[j];
+                        // Same color, same y, same height, adjacent x
+                        if (
+                            r1.color === r2.color &&
+                            r1.y === r2.y &&
+                            r1.height === r2.height &&
+                            r1.x + r1.width === r2.x
+                        ) {
+                            mergedRect = {
+                                x: r1.x,
+                                y: r1.y,
+                                width: r1.width + r2.width,
+                                height: r1.height,
+                                color: r1.color,
+                                error: 0
+                            };
+                            used.add(j);
+                            changed = true;
+                            r1 = mergedRect;
+                        }
+                    }
+                    horMerged.push(mergedRect);
+                    used.add(i);
+                }
+                // Vertical merge
+                let verMerged: BSPNode[] = [];
+                used.clear();
+                for (let i = 0; i < horMerged.length; i++) {
+                    if (used.has(i)) continue;
+                    let r1 = horMerged[i];
+                    let mergedRect = r1;
+                    for (let j = 0; j < horMerged.length; j++) {
+                        if (i === j || used.has(j)) continue;
+                        let r2 = horMerged[j];
+                        // Same color, same x, same width, adjacent y
+                        if (
+                            r1.color === r2.color &&
+                            r1.x === r2.x &&
+                            r1.width === r2.width &&
+                            r1.y + r1.height === r2.y
+                        ) {
+                            mergedRect = {
+                                x: r1.x,
+                                y: r1.y,
+                                width: r1.width,
+                                height: r1.height + r2.height,
+                                color: r1.color,
+                                error: 0
+                            };
+                            used.add(j);
+                            changed = true;
+                            r1 = mergedRect;
+                        }
+                    }
+                    verMerged.push(mergedRect);
+                    used.add(i);
+                }
+                merged = verMerged;
+            }
+            return merged;
+        }
+    const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
+    // Build pixel grid
+    const grid: string[][] = Array.from({ length: result.height }, () => Array(result.width).fill(""));
+    result.cells.forEach(cell => {
+        for (let dy = 0; dy < cell.height; dy++) {
+            for (let dx = 0; dx < cell.width; dx++) {
+                const y = cell.y + dy;
+                const x = cell.x + dx;
+                if (y < result.height && x < result.width) {
+                    grid[y][x] = cell.color;
+                }
+            }
+        }
+    });
+
+    // Error-driven BSP partition algorithm
+    type BSPNode = {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        color: string;
+        error: number;
+        left?: BSPNode;
+        right?: BSPNode;
+        splitDir?: 'horizontal' | 'vertical';
+        splitPos?: number;
+    };
+
+    function regionStats(x: number, y: number, w: number, h: number): { color: string; error: number } {
+        let sumR = 0, sumG = 0, sumB = 0, count = 0;
+        let error = 0;
+        for (let row = y; row < y + h; row++) {
+            for (let col = x; col < x + w; col++) {
+                const rgbMatch = grid[row][col].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                let r = 0, g = 0, b = 0;
+                if (rgbMatch) {
+                    r = parseInt(rgbMatch[1], 10);
+                    g = parseInt(rgbMatch[2], 10);
+                    b = parseInt(rgbMatch[3], 10);
+                }
+                sumR += r;
+                sumG += g;
+                sumB += b;
+                count++;
+            }
+        }
+        if (!count) return { color: 'rgb(0,0,0)', error: 0 };
+        const avgR = Math.round(sumR / count);
+        const avgG = Math.round(sumG / count);
+        const avgB = Math.round(sumB / count);
+        // Error: sum squared distance to mean color
+        for (let row = y; row < y + h; row++) {
+            for (let col = x; col < x + w; col++) {
+                const rgbMatch = grid[row][col].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                let r = 0, g = 0, b = 0;
+                if (rgbMatch) {
+                    r = parseInt(rgbMatch[1], 10);
+                    g = parseInt(rgbMatch[2], 10);
+                    b = parseInt(rgbMatch[3], 10);
+                }
+                error += Math.pow(r - avgR, 2) + Math.pow(g - avgG, 2) + Math.pow(b - avgB, 2);
+            }
+        }
+        return { color: `rgb(${avgR}, ${avgG}, ${avgB})`, error };
+    }
+
+    function bspPartition(x: number, y: number, w: number, h: number, minSize: number, errorThreshold: number): BSPNode {
+        const { color, error } = regionStats(x, y, w, h);
+        if (w <= minSize && h <= minSize || error < errorThreshold) {
+            return { x, y, width: w, height: h, color, error };
+        }
+        // Try all possible splits, pick the one with lowest sum error
+        let bestSplit: { dir: 'horizontal' | 'vertical'; pos: number; error: number } | null = null;
+        // Vertical splits
+        for (let split = 1; split < w; split++) {
+            const leftStats = regionStats(x, y, split, h);
+            const rightStats = regionStats(x + split, y, w - split, h);
+            const totalError = leftStats.error + rightStats.error;
+            if (!bestSplit || totalError < bestSplit.error) {
+                bestSplit = { dir: 'vertical', pos: split, error: totalError };
+            }
+        }
+        // Horizontal splits
+        for (let split = 1; split < h; split++) {
+            const topStats = regionStats(x, y, w, split);
+            const bottomStats = regionStats(x, y + split, w, h - split);
+            const totalError = topStats.error + bottomStats.error;
+            if (!bestSplit || totalError < bestSplit.error) {
+                bestSplit = { dir: 'horizontal', pos: split, error: totalError };
+            }
+        }
+        if (!bestSplit) {
+            return { x, y, width: w, height: h, color, error };
+        }
+        // Recursively partition
+        if (bestSplit.dir === 'vertical') {
+            return {
+                x, y, width: w, height: h, color, error,
+                splitDir: 'vertical', splitPos: bestSplit.pos,
+                left: bspPartition(x, y, bestSplit.pos, h, minSize, errorThreshold),
+                right: bspPartition(x + bestSplit.pos, y, w - bestSplit.pos, h, minSize, errorThreshold)
+            };
+        } else {
+            return {
+                x, y, width: w, height: h, color, error,
+                splitDir: 'horizontal', splitPos: bestSplit.pos,
+                left: bspPartition(x, y, w, bestSplit.pos, minSize, errorThreshold),
+                right: bspPartition(x, y + bestSplit.pos, w, h - bestSplit.pos, minSize, errorThreshold)
+            };
+        }
+    }
+
+    // Traverse BSP tree and collect rectangles
+    function collectRects(node: BSPNode, rects: BSPNode[]) {
+        if (!node.left && !node.right) {
+            rects.push(node);
+        } else {
+            if (node.left) collectRects(node.left, rects);
+            if (node.right) collectRects(node.right, rects);
+        }
+    }
+
+    // Parameters for partitioning
+    const minSize = 4;
+    const errorThreshold = 12000;
+    const root = bspPartition(0, 0, result.width, result.height, minSize, errorThreshold);
+    const rects: BSPNode[] = [];
+    collectRects(root, rects);
+    // Multi-pass merge
+    const mergedRects = multiPassMerge(rects, result.width, result.height);
+
+    // Generate HTML table
+    let tableRows = "";
+    for (let y = 0; y < result.height; y++) {
+        let rowHtml = "";
+        for (let x = 0; x < result.width; x++) {
+            // Find rectangle starting at (x, y)
+            const rect = mergedRects.find(r => r.x === x && r.y === y);
+            if (rect) {
+                // Quantize color to 12-bit
+                const rgbMatch = rect.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                let hexColor = "#000000";
+                if (rgbMatch) {
+                    const quantize = (v: number) => Math.floor(v / 16) * 16;
+                    const r = quantize(parseInt(rgbMatch[1], 10));
+                    const g = quantize(parseInt(rgbMatch[2], 10));
+                    const b = quantize(parseInt(rgbMatch[3], 10));
+                    const toHex = (v: number) => v.toString(16).padStart(2, '0');
+                    const hex6 = toHex(r) + toHex(g) + toHex(b);
+                    hexColor = `#${hex6}`;
+                    if (
+                        hex6.length === 6 &&
+                        hex6[0] === hex6[1] &&
+                        hex6[2] === hex6[3] &&
+                        hex6[4] === hex6[5]
+                    ) {
+                        hexColor = `#${hex6[0]}${hex6[2]}${hex6[4]}`;
+                    }
+                }
+                let attrs = `bgcolor=${hexColor}`;
+                if (rect.width > 1) attrs += ` colspan=${rect.width}`;
+                if (rect.height > 1) attrs += ` rowspan=${rect.height}`;
+                rowHtml += `<td ${attrs}></td>`;
+            }
+        }
+        tableRows += `<tr>${rowHtml}</tr>`;
+    }
+    let html = `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;">
+    <head>
+        <meta name="color-scheme" content="light">
+        <meta name="supported-color-schemes" content="light">
+    </head>
+    <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">BSP Partition HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    html = html.replace(/\n/g, '').replace(/\s{2,}/g, '').replace(/>\s+</g, '><');
+    return html;
+}
 function createHtmlSectionRectangleCover(result: TransformedImageResult, fileName: string | null): string {
     const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
     // Build pixel grid
@@ -716,6 +1217,8 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                 blurCtx.filter = `blur(${blurSigma}px)`;
                 blurCtx.drawImage(image, 0, 0, image.width, image.height);
 
+                // Track all attempts for best resolution under maxKB
+                const attempts: { width: number; height: number; mergedCount: number; estimatedKB: number; result: TransformedImageResult }[] = [];
                 for (let i = 0; i < widths.length; i++) {
                     let targetWidth = Math.min(widths[i], image.width);
                     let targetHeight = Math.max(1, Math.floor(targetWidth / aspectRatio));
@@ -732,7 +1235,6 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                     }
 
                     context.imageSmoothingEnabled = true;
-                    // Brug det slørede billede som input til nedskalering
                     context.drawImage(blurCanvas, 0, 0, image.width, image.height, 0, 0, targetWidth, targetHeight);
 
                     const pixels = context.getImageData(0, 0, targetWidth, targetHeight);
@@ -740,13 +1242,11 @@ function transformImage(file: File): Promise<TransformedImageResult> {
 
                     // Kvantisér farver efter quadtree vha. k-means (palette på kMeansPaletteSize farver)
                     const quantizeColorsKMeans = (cells: QuadCell[], k: number): QuadCell[] => {
-                        // Saml alle farver
                         const colors = cells.map(cell => {
                             const match = cell.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
                             if (!match) return [0,0,0];
                             return [parseInt(match[1],10), parseInt(match[2],10), parseInt(match[3],10)];
                         });
-                        // Initier k tilfældige farver som centroids
                         const centroids = colors.slice(0, k);
                         while (centroids.length < k && colors.length > 0) {
                             centroids.push(colors[Math.floor(Math.random()*colors.length)]);
@@ -756,7 +1256,6 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                         let iter = 0;
                         while (changed && iter < 10) {
                             changed = false;
-                            // Assign
                             for (let i = 0; i < colors.length; i++) {
                                 let minDist = Infinity, minIdx = 0;
                                 for (let c = 0; c < centroids.length; c++) {
@@ -765,7 +1264,6 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                                 }
                                 if (assignments[i] !== minIdx) { changed = true; assignments[i] = minIdx; }
                             }
-                            // Update centroids
                             const sums = Array.from({length:k},()=>[0,0,0,0]);
                             for (let i = 0; i < colors.length; i++) {
                                 const c = assignments[i];
@@ -785,7 +1283,6 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                             }
                             iter++;
                         }
-                        // Erstat farver i celler med nærmeste centroid
                         return cells.map((cell, i) => {
                             const c = centroids[assignments[i]];
                             return { ...cell, color: `rgb(${c[0]}, ${c[1]}, ${c[2]})` };
@@ -793,32 +1290,26 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                     };
                     cells = quantizeColorsKMeans(cells, MAIL_RENDER_CONFIG.kMeansPaletteSize);
 
-                    const mergedCount = mergeRectangles(cells, targetWidth, targetHeight).length;
+                    const beforeMergeCount = cells.length;
+                    const mergedRectangles = mergeRectangles(cells, targetWidth, targetHeight);
+                    const mergedCount = mergedRectangles.length;
                     const estimatedChars = mergedCount * 46;
                     const estimatedKB = estimatedChars / 1000;
 
-                    // Log resolution and estimated size for each iteration
-                    console.log(`Iteration ${i + 1}: width=${targetWidth}, height=${targetHeight}, mergedRectangles=${mergedCount}, estimatedChars=${estimatedChars}, estimatedKB=${estimatedKB.toFixed(2)}`);
+                    console.log(`Iteration ${i + 1}: width=${targetWidth}, height=${targetHeight}, kMeansPaletteSize=${MAIL_RENDER_CONFIG.kMeansPaletteSize}, cellsBeforeMerge=${beforeMergeCount}, mergedRectangles=${mergedCount}, estimatedChars=${estimatedChars}, estimatedKB=${estimatedKB.toFixed(2)}`);
 
-                    if (estimatedKB > maxKB && prevResult) {
-                        // Log the oversized attempt as well
-                        console.log(`Oversized attempt: width=${targetWidth}, height=${targetHeight}, mergedRectangles=${mergedCount}, estimatedChars=${estimatedChars}, estimatedKB=${estimatedKB.toFixed(2)}`);
-                        resolve(prevResult);
-                        return;
-                    }
-                    prevResult = { width: targetWidth, height: targetHeight, cells };
-                    prevChars = estimatedChars;
+                    attempts.push({ width: targetWidth, height: targetHeight, mergedCount, estimatedKB, result: { width: targetWidth, height: targetHeight, cells: mergedRectangles } });
                 }
-                // Hvis ingen kom over 100 KB, brug den største
-                if (prevResult) {
-                    // Log the final oversized attempt if it was never resolved
-                    const mergedCount = mergeRectangles(prevResult.cells, prevResult.width, prevResult.height).length;
-                    const estimatedChars = mergedCount * 46;
-                    const estimatedKB = estimatedChars / 1000;
-                    console.log(`Final attempt: width=${prevResult.width}, height=${prevResult.height}, mergedRectangles=${mergedCount}, estimatedChars=${estimatedChars}, estimatedKB=${estimatedKB.toFixed(2)}`);
-                    resolve(prevResult);
+                // Find best attempt under maxKB
+                const best = attempts.filter(a => a.estimatedKB <= maxKB).sort((a, b) => b.width - a.width)[0];
+                if (best) {
+                    console.log(`Selected attempt: width=${best.width}, height=${best.height}, kMeansPaletteSize=${MAIL_RENDER_CONFIG.kMeansPaletteSize}, mergedRectangles=${best.mergedCount}, estimatedKB=${best.estimatedKB.toFixed(2)}`);
+                    resolve(best.result);
                 } else {
-                    reject(new Error("Image transformation failed."));
+                    // If none fit, use largest and log
+                    const last = attempts[attempts.length - 1];
+                    console.log(`Final oversized attempt: width=${last.width}, height=${last.height}, kMeansPaletteSize=${MAIL_RENDER_CONFIG.kMeansPaletteSize}, mergedRectangles=${last.mergedCount}, estimatedKB=${last.estimatedKB.toFixed(2)}`);
+                    resolve(last.result);
                 }
             } catch (error) {
                 reject(error instanceof Error ? error : new Error("Image transformation failed."));
@@ -833,25 +1324,155 @@ export default function MailRendering() {
     const [transformedResult, setTransformedResult] = useState<TransformedImageResult | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [selectedPipeline, setSelectedPipeline] = useState<'rectangle' | 'bsp' | null>(null);
 
-    // Rectangle covering pipeline only
+    // Rectangle Cover pipeline
     const imageHtmlSectionRectangleCover = useMemo(() => {
         if (!transformedResult) return "";
         return createHtmlSectionRectangleCover(transformedResult, selectedFile?.name ?? null);
     }, [selectedFile, transformedResult]);
 
-    // Beregn mergeRectangles hvis transformedResult findes
     const mergedRectanglesCount = useMemo(() => {
         if (!transformedResult) return 0;
-        // mergeRectangles kræver width, height, cells
         return mergeRectangles(transformedResult.cells, transformedResult.width, transformedResult.height).length;
     }, [transformedResult]);
+
+    // BSP Partition pipeline
+    const imageHtmlSectionBSPPartition = useMemo(() => {
+        if (!transformedResult) return "";
+        return createHtmlSectionBSPPartition(transformedResult, selectedFile?.name ?? null);
+    }, [selectedFile, transformedResult]);
+
+    const bspRectsCount = useMemo(() => {
+        if (!transformedResult) return 0;
+        // Collect BSP rectangles
+        const safeName = selectedFile?.name ?? null;
+        // Reuse BSP logic
+        const grid: string[][] = Array.from({ length: transformedResult.height }, () => Array(transformedResult.width).fill(""));
+        transformedResult.cells.forEach(cell => {
+            for (let dy = 0; dy < cell.height; dy++) {
+                for (let dx = 0; dx < cell.width; dx++) {
+                    const y = cell.y + dy;
+                    const x = cell.x + dx;
+                    if (y < transformedResult.height && x < transformedResult.width) {
+                        grid[y][x] = cell.color;
+                    }
+                }
+            }
+        });
+        // Parameters for partitioning
+        const minSize = 4;
+        const errorThreshold = 12000;
+        // BSPNode type
+        type BSPNode = {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+            color: string;
+            error: number;
+            left?: BSPNode;
+            right?: BSPNode;
+            splitDir?: 'horizontal' | 'vertical';
+            splitPos?: number;
+        };
+        function regionStats(x: number, y: number, w: number, h: number): { color: string; error: number } {
+            let sumR = 0, sumG = 0, sumB = 0, count = 0;
+            let error = 0;
+            for (let row = y; row < y + h; row++) {
+                for (let col = x; col < x + w; col++) {
+                    const rgbMatch = grid[row][col].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    let r = 0, g = 0, b = 0;
+                    if (rgbMatch) {
+                        r = parseInt(rgbMatch[1], 10);
+                        g = parseInt(rgbMatch[2], 10);
+                        b = parseInt(rgbMatch[3], 10);
+                    }
+                    sumR += r;
+                    sumG += g;
+                    sumB += b;
+                    count++;
+                }
+            }
+            if (!count) return { color: 'rgb(0,0,0)', error: 0 };
+            const avgR = Math.round(sumR / count);
+            const avgG = Math.round(sumG / count);
+            const avgB = Math.round(sumB / count);
+            for (let row = y; row < y + h; row++) {
+                for (let col = x; col < x + w; col++) {
+                    const rgbMatch = grid[row][col].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    let r = 0, g = 0, b = 0;
+                    if (rgbMatch) {
+                        r = parseInt(rgbMatch[1], 10);
+                        g = parseInt(rgbMatch[2], 10);
+                        b = parseInt(rgbMatch[3], 10);
+                    }
+                    error += Math.pow(r - avgR, 2) + Math.pow(g - avgG, 2) + Math.pow(b - avgB, 2);
+                }
+            }
+            return { color: `rgb(${avgR}, ${avgG}, ${avgB})`, error };
+        }
+        function bspPartition(x: number, y: number, w: number, h: number, minSize: number, errorThreshold: number): BSPNode {
+            const { color, error } = regionStats(x, y, w, h);
+            if (w <= minSize && h <= minSize || error < errorThreshold) {
+                return { x, y, width: w, height: h, color, error };
+            }
+            let bestSplit: { dir: 'horizontal' | 'vertical'; pos: number; error: number } | null = null;
+            for (let split = 1; split < w; split++) {
+                const leftStats = regionStats(x, y, split, h);
+                const rightStats = regionStats(x + split, y, w - split, h);
+                const totalError = leftStats.error + rightStats.error;
+                if (!bestSplit || totalError < bestSplit.error) {
+                    bestSplit = { dir: 'vertical', pos: split, error: totalError };
+                }
+            }
+            for (let split = 1; split < h; split++) {
+                const topStats = regionStats(x, y, w, split);
+                const bottomStats = regionStats(x, y + split, w, h - split);
+                const totalError = topStats.error + bottomStats.error;
+                if (!bestSplit || totalError < bestSplit.error) {
+                    bestSplit = { dir: 'horizontal', pos: split, error: totalError };
+                }
+            }
+            if (!bestSplit) {
+                return { x, y, width: w, height: h, color, error };
+            }
+            if (bestSplit.dir === 'vertical') {
+                return {
+                    x, y, width: w, height: h, color, error,
+                    splitDir: 'vertical', splitPos: bestSplit.pos,
+                    left: bspPartition(x, y, bestSplit.pos, h, minSize, errorThreshold),
+                    right: bspPartition(x + bestSplit.pos, y, w - bestSplit.pos, h, minSize, errorThreshold)
+                };
+            } else {
+                return {
+                    x, y, width: w, height: h, color, error,
+                    splitDir: 'horizontal', splitPos: bestSplit.pos,
+                    left: bspPartition(x, y, w, bestSplit.pos, minSize, errorThreshold),
+                    right: bspPartition(x, y + bestSplit.pos, w, h - bestSplit.pos, minSize, errorThreshold)
+                };
+            }
+        }
+        function collectRects(node: BSPNode, rects: BSPNode[]) {
+            if (!node.left && !node.right) {
+                rects.push(node);
+            } else {
+                if (node.left) collectRects(node.left, rects);
+                if (node.right) collectRects(node.right, rects);
+            }
+        }
+        const root = bspPartition(0, 0, transformedResult.width, transformedResult.height, minSize, errorThreshold);
+        const rects: BSPNode[] = [];
+        collectRects(root, rects);
+        return rects.length;
+    }, [transformedResult]);
+
 
     const handleImageUpload = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (!selectedFile) {
-            setErrorMessage("Please choose an image first.");
+        if (!selectedFile || !selectedPipeline) {
+            setErrorMessage("Vælg billede og pipeline.");
             return;
         }
 
@@ -867,7 +1488,12 @@ export default function MailRendering() {
                 return sourcePreview;
             });
 
-            const transformed = await transformImage(selectedFile);
+            let transformed: TransformedImageResult;
+            if (selectedPipeline === 'bsp') {
+                transformed = await transformImageBSP(selectedFile);
+            } else {
+                transformed = await transformImage(selectedFile);
+            }
             setTransformedResult(transformed);
         } catch (error) {
             const message = error instanceof Error ? error.message : "Image transformation failed.";
@@ -876,6 +1502,18 @@ export default function MailRendering() {
         } finally {
             setIsProcessing(false);
         }
+    };
+
+    // Separate upload handlers for each pipeline
+    const handleRectangleUpload = async (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        setSelectedPipeline('rectangle');
+        await handleImageUpload(event as any);
+    };
+    const handleBspUpload = async (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        setSelectedPipeline('bsp');
+        await handleImageUpload(event as any);
     };
 
     return (
@@ -908,26 +1546,37 @@ export default function MailRendering() {
                     This page will host experiments and demos for rendering email-friendly layouts and components.
                 </Text>
 
-                <form onSubmit={handleImageUpload}>
-                    <Box mb="1.5em">
-                        <label htmlFor="mail-image-upload" style={{ display: "block", marginBottom: "0.5em", color: "#2B4570", fontWeight: 600 }}>
-                            Upload an image
-                        </label>
-                        <input
-                            id="mail-image-upload"
-                            type="file"
-                            accept="image/*"
-                            onChange={(event) => {
-                                const file = event.target.files?.[0] ?? null;
-                                setSelectedFile(file);
-                                setErrorMessage(null);
-                            }}
-                        />
-                        <Button type="submit" bg="cyan.solid" mt="1em" loading={isProcessing}>
-                            Upload and transform
+                <Box mb="1.5em">
+                    <label htmlFor="mail-image-upload" style={{ display: "block", marginBottom: "0.5em", color: "#2B4570", fontWeight: 600 }}>
+                        Upload an image
+                    </label>
+                    <input
+                        id="mail-image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => {
+                            const file = event.target.files?.[0] ?? null;
+                            setSelectedFile(file);
+                            setErrorMessage(null);
+                        }}
+                    />
+                    <Box display="flex" gap="1em" mt="1em">
+                        <Button
+                            bg="cyan.solid"
+                            loading={isProcessing}
+                            onClick={handleRectangleUpload}
+                        >
+                            Upload og transform (Rectangle Cover)
+                        </Button>
+                        <Button
+                            bg="purple.solid"
+                            loading={isProcessing}
+                            onClick={handleBspUpload}
+                        >
+                            Upload og transform (BSP Partition)
                         </Button>
                     </Box>
-                </form>
+                </Box>
 
                 {errorMessage && (
                     <Text color="red.600" mb="1em">
@@ -955,72 +1604,134 @@ export default function MailRendering() {
 
                 {transformedResult && (
                     <Box mb="1.5em">
-                        <Heading as="h3" size="md" mb="0.5em">
-                            Rectangle Cover data
-                        </Heading>
-                        <Text color="#2B4570">
-                            {`Rectangles før merge: ${transformedResult.cells.length} | efter merge: ${mergedRectanglesCount} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
-                        </Text>
-                        <Text color="#2B4570" fontSize="sm">
-                            {`Estimeret filstørrelse: ${(mergedRectanglesCount * 46).toLocaleString()} karakterer (baseret på merged)`}
-                        </Text>
-                        <Text color="#2B4570" fontSize="sm">
-                            {`≈ ${(Math.round((mergedRectanglesCount * 46) / 1000)).toLocaleString()} KB`}
-                        </Text>
-                        {mergedRectanglesCount * 46 > 100000 && (
-                            <Text color="red.600" fontSize="sm" fontWeight="bold">
-                                Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med nuværende opløsning.
-                            </Text>
+                        {selectedPipeline === 'rectangle' && (
+                            <>
+                                <Heading as="h3" size="md" mb="0.5em">
+                                    Rectangle Cover data
+                                </Heading>
+                                <Text color="#2B4570">
+                                    {`Rectangles før merge: ${transformedResult.cells.length} | efter merge: ${mergedRectanglesCount} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
+                                </Text>
+                                <Text color="#2B4570" fontSize="sm">
+                                    {`Estimeret filstørrelse: ${(mergedRectanglesCount * 46).toLocaleString()} karakterer (baseret på merged)`}
+                                </Text>
+                                <Text color="#2B4570" fontSize="sm">
+                                    {`≈ ${(Math.round((mergedRectanglesCount * 46) / 1000)).toLocaleString()} KB`}
+                                </Text>
+                                {mergedRectanglesCount * 46 > 100000 && (
+                                    <Text color="red.600" fontSize="sm" fontWeight="bold">
+                                        Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med nuværende opløsning.
+                                    </Text>
+                                )}
+                            </>
+                        )}
+                        {selectedPipeline === 'bsp' && (
+                            <>
+                                <Heading as="h3" size="md" mb="0.5em">
+                                    BSP Partition data
+                                </Heading>
+                                <Text color="#2B4570">
+                                    {`BSP rectangles: ${bspRectsCount} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
+                                </Text>
+                                <Text color="#2B4570" fontSize="sm">
+                                    {`Estimeret filstørrelse: ${(bspRectsCount * 46).toLocaleString()} karakterer (baseret på BSP)`}
+                                </Text>
+                                <Text color="#2B4570" fontSize="sm">
+                                    {`≈ ${(Math.round((bspRectsCount * 46) / 1000)).toLocaleString()} KB`}
+                                </Text>
+                                {bspRectsCount * 46 > 100000 && (
+                                    <Text color="red.600" fontSize="sm" fontWeight="bold">
+                                        Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med BSP-partition.
+                                    </Text>
+                                )}
+                            </>
                         )}
                     </Box>
                 )}
 
+                {/* BSP Partition stats and preview */}
+
                 {imageHtmlSectionRectangleCover && (
+                    selectedPipeline === 'rectangle' && (
+                        <Box mb="1.5em">
+                            <Heading as="h3" size="md" mb="0.5em">
+                                Rectangle Cover metode
+                            </Heading>
+                            <Text mb="1em">HTML genereret ved at dække billedet med størst mulige ensfarvede rektangler (maximal rectangles, greedy).</Text>
+                            <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionRectangleCover }} />
+                            <Box display="flex" alignItems="center" mb="0.5em">
+                                <Button
+                                    size="sm"
+                                    colorScheme="cyan"
+                                    onClick={async () => {
+                                        try {
+                                            await navigator.clipboard.writeText(imageHtmlSectionRectangleCover);
+                                            setErrorMessage("HTML kopieret!");
+                                            setTimeout(() => setErrorMessage(null), 1200);
+                                        } catch {
+                                            setErrorMessage("Kunne ikke kopiere HTML.");
+                                            setTimeout(() => setErrorMessage(null), 1200);
+                                        }
+                                    }}
+                                    mr="1em"
+                                >
+                                    Kopier HTML
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    colorScheme="green"
+                                    style={{ display: 'none' }}
+                                    onClick={async () => {
+                                        await sendHtmlEmail(imageHtmlSectionRectangleCover, "Mail Rendering - Rectangle Cover metode");
+                                        setErrorMessage("Email sendt!");
+                                        setTimeout(() => setErrorMessage(null), 1200);
+                                    }}
+                                    mr="1em"
+                                >
+                                    Send email
+                                </Button>
+                                {errorMessage && (
+                                    <Text color="cyan.700" fontSize="sm">
+                                        {errorMessage}
+                                    </Text>
+                                )}
+                            </Box>
+                            <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
+                                {imageHtmlSectionRectangleCover || "Ingen HTML blev genereret."}
+                            </Box>
+                        </Box>
+                    )
+                )}
+
+                {/* BSP Partition preview */}
+                {selectedPipeline === 'bsp' && imageHtmlSectionBSPPartition && (
                     <Box mb="1.5em">
                         <Heading as="h3" size="md" mb="0.5em">
-                            Rectangle Cover metode
+                            BSP Partition metode
                         </Heading>
-                        <Text mb="1em">HTML genereret ved at dække billedet med størst mulige ensfarvede rektangler (maximal rectangles, greedy).</Text>
-                        <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionRectangleCover }} />
+                        <Text mb="1em">HTML genereret ved error-driven BSP partition af billedet.</Text>
+                        <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionBSPPartition }} />
                         <Box display="flex" alignItems="center" mb="0.5em">
                             <Button
                                 size="sm"
-                                colorScheme="cyan"
+                                colorScheme="purple"
                                 onClick={async () => {
                                     try {
-                                        await navigator.clipboard.writeText(imageHtmlSectionRectangleCover);
-                                        setErrorMessage("HTML kopieret!");
+                                        await navigator.clipboard.writeText(imageHtmlSectionBSPPartition);
+                                        setErrorMessage("BSP HTML kopieret!");
                                         setTimeout(() => setErrorMessage(null), 1200);
                                     } catch {
-                                        setErrorMessage("Kunne ikke kopiere HTML.");
+                                        setErrorMessage("Kunne ikke kopiere BSP HTML.");
                                         setTimeout(() => setErrorMessage(null), 1200);
                                     }
                                 }}
                                 mr="1em"
                             >
-                                Kopier HTML
+                                Kopier BSP HTML
                             </Button>
-                            <Button
-                                size="sm"
-                                colorScheme="green"
-                                style={{ display: 'none' }}
-                                onClick={async () => {
-                                    await sendHtmlEmail(imageHtmlSectionRectangleCover, "Mail Rendering - Rectangle Cover metode");
-                                    setErrorMessage("Email sendt!");
-                                    setTimeout(() => setErrorMessage(null), 1200);
-                                }}
-                                mr="1em"
-                            >
-                                Send email
-                            </Button>
-                            {errorMessage && (
-                                <Text color="cyan.700" fontSize="sm">
-                                    {errorMessage}
-                                </Text>
-                            )}
                         </Box>
                         <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
-                            {imageHtmlSectionRectangleCover || "Ingen HTML blev genereret."}
+                            {imageHtmlSectionBSPPartition || "Ingen BSP HTML blev genereret."}
                         </Box>
                     </Box>
                 )}
