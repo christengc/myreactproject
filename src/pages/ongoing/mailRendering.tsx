@@ -997,6 +997,7 @@ export default function MailRendering() {
                             <Button
                                 size="sm"
                                 colorScheme="green"
+                                style={{ display: 'none' }}
                                 onClick={async () => {
                                     await sendHtmlEmail(imageHtmlSectionRectangleCover, "Mail Rendering - Rectangle Cover metode");
                                     setErrorMessage("Email sendt!");
