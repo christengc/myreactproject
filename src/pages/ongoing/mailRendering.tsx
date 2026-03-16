@@ -504,10 +504,16 @@ function calculateRegionStats(imageData: Uint8ClampedArray, imageWidth: number, 
             const g = imageData[index + 1];
             const b = imageData[index + 2];
             const lab = rgbToLab(r, g, b);
-            sumL += lab[0];
-            sumA += lab[1];
-            sumB += lab[2];
-            labPixels.push(lab);
+            // Ensure lab is always [number, number, number]
+            if (Array.isArray(lab) && lab.length === 3) {
+                sumL += lab[0];
+                sumA += lab[1];
+                sumB += lab[2];
+                labPixels.push([lab[0], lab[1], lab[2]]);
+            } else {
+                // Fallback to [0,0,0] if conversion fails
+                labPixels.push([0, 0, 0]);
+            }
             count++;
         }
     }
