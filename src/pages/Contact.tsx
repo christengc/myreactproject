@@ -2,12 +2,39 @@ import { Fieldset, Container,Textarea, Box,Link,Flex, Spacer, Image, Icon, VStac
 import { MdOutlineEmail } from "react-icons/md";
 import { ImLinkedin } from "react-icons/im";
 import { BiMobileVibration } from "react-icons/bi";
+import { useState } from "react";
 
 const fontLuckiestGuy = {
   fontFamily: 'LuckiestGuy'
 }
 
+async function sendMessage(name: string, email: string, message: string) {
+    // POST to backend route
+    
+    const recipients = ["christenchristensen@live.dk"];
+    const sender = "test@christenchristensen.dk";
+    const subject = `New message from ${name} (${email})`;
+    const content = `<p>${message}</p>`;
+    const response = await fetch("/api/send-mail", {
+
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            from: sender,
+            to: recipients,
+            subject: subject,
+            html: content
+        })
+    });
+}
 export default function Contact() {
+
+const [name, setName] = useState("");
+const [email, setEmail] = useState("");
+const [message, setMessage] = useState("");
+
   return (
     <Container>
      <Box className="dropShadow">
@@ -26,22 +53,22 @@ export default function Contact() {
 
             <Field.Root>
               <Field.Label >Name</Field.Label>
-              <Input bg="white" name="name" placeholder="Your full name here" />
+              <Input bg="white" name="name" placeholder="Your full name here" onChange={(e) => setName(e.target.value)} />
             </Field.Root>
 
             <Field.Root>
               <Field.Label >Email address</Field.Label>
-              <Input bg="white" name="email" type="email" placeholder="mymail@provider.com"/>
+              <Input bg="white" name="email" type="email" placeholder="mymail@provider.com" onChange={(e) => setEmail(e.target.value)} />
             </Field.Root>
 
             <Field.Root>
               <Field.Label >Message</Field.Label>
-              <Textarea bg="white" variant="outline" placeholder="Spill the beans..." />
+              <Textarea bg="white" variant="outline" placeholder="Spill the beans..." onChange={(e) => setMessage(e.target.value)} />
             </Field.Root>
 
           </Fieldset.Content>
 
-          <Button bg="#2AB7CA" type="submit" alignSelf="flex-start">
+          <Button bg="#2AB7CA" type="submit" onClick={() => sendMessage(name, email, message)} alignSelf="flex-start">
             Send Message
           </Button>
         </Fieldset.Root>

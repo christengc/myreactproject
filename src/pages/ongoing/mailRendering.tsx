@@ -1,3 +1,5 @@
+// --- CONSTANTS ---
+const HTML_RECT_ESTIMATE_CHARS = 43;
 // --- CONFIGURATION ---
 const MAIL_RENDER_CONFIG = {
     blurSigma: 1.5, // Gaussian blur strength
@@ -7,10 +9,10 @@ const MAIL_RENDER_CONFIG = {
         { threshold: 1200, maxRect: 64 },
         { threshold: Infinity, maxRect: 32 },
     ],
-    kMeansPaletteSize: 16184, // Number of colors for k-means quantization
-    widths: [350, 370],
-    maxKB: 300,
-    minKB: 270,
+    kMeansPaletteSize: 16384, // Number of colors for k-means quantization
+    widths: [600, 700, 800],
+    maxKB: 900,
+    minKB: 800,
 };
 // Rectangle covering pipeline: maximal rectangles (greedy)
 // Alternative pipeline: error-driven BSP partition
@@ -232,7 +234,7 @@ function transformImageBSP(file: File): Promise<TransformedImageResult> {
                     cells = quantizeColorsKMeans(cells, MAIL_RENDER_CONFIG.kMeansPaletteSize);
 
                     const bspRects = countBspRectsFromCells(cells, targetWidth, targetHeight);
-                    const estimatedChars = bspRects * 46;
+                    const estimatedChars = bspRects * HTML_RECT_ESTIMATE_CHARS;
                     const estimatedKB = estimatedChars / 1000;
 
                     console.log(`BSP Iteration ${i + 1}: width=${targetWidth}, height=${targetHeight}, kMeansPaletteSize=${MAIL_RENDER_CONFIG.kMeansPaletteSize}, bspRects=${bspRects}, estimatedChars=${estimatedChars}, estimatedKB=${estimatedKB.toFixed(2)}`);
@@ -248,7 +250,7 @@ function transformImageBSP(file: File): Promise<TransformedImageResult> {
                 // Hvis ingen kom over grænsen, brug den største
                 if (prevResult) {
                     const bspRects = countBspRectsFromCells(prevResult.cells, prevResult.width, prevResult.height);
-                    const estimatedKB = (bspRects * 46) / 1000;
+                    const estimatedKB = (bspRects * HTML_RECT_ESTIMATE_CHARS) / 1000;
                     console.log(`BSP Final attempt: width=${prevResult.width}, height=${prevResult.height}, bspRects=${bspRects}, estimatedKB=${estimatedKB.toFixed(2)}`);
                     resolve(prevResult);
                 } else {
@@ -477,25 +479,14 @@ function createHtmlSectionBSPPartition(result: TransformedImageResult, fileName:
             // Find rectangle starting at (x, y)
             const rect = mergedRects.find(r => r.x === x && r.y === y);
             if (rect) {
-                // Quantize color to 12-bit
+                // Quantize color to RGB444 and output 3-digit hex
                 const rgbMatch = rect.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-                let hexColor = "#000000";
+                let hexColor = "#000";
                 if (rgbMatch) {
-                    const quantize = (v: number) => Math.floor(v / 16) * 16;
-                    const r = quantize(parseInt(rgbMatch[1], 10));
-                    const g = quantize(parseInt(rgbMatch[2], 10));
-                    const b = quantize(parseInt(rgbMatch[3], 10));
-                    const toHex = (v: number) => v.toString(16).padStart(2, '0');
-                    const hex6 = toHex(r) + toHex(g) + toHex(b);
-                    hexColor = `#${hex6}`;
-                    if (
-                        hex6.length === 6 &&
-                        hex6[0] === hex6[1] &&
-                        hex6[2] === hex6[3] &&
-                        hex6[4] === hex6[5]
-                    ) {
-                        hexColor = `#${hex6[0]}${hex6[2]}${hex6[4]}`;
-                    }
+                    const r444 = Math.floor(parseInt(rgbMatch[1], 10) / 16);
+                    const g444 = Math.floor(parseInt(rgbMatch[2], 10) / 16);
+                    const b444 = Math.floor(parseInt(rgbMatch[3], 10) / 16);
+                    hexColor = `#${r444.toString(16)}${g444.toString(16)}${b444.toString(16)}`;
                 }
                 let attrs = `bgcolor=${hexColor}`;
                 if (rect.width > 1) attrs += ` colspan=${rect.width}`;
@@ -1293,7 +1284,7 @@ function transformImage(file: File): Promise<TransformedImageResult> {
                     const beforeMergeCount = cells.length;
                     const mergedRectangles = mergeRectangles(cells, targetWidth, targetHeight);
                     const mergedCount = mergedRectangles.length;
-                    const estimatedChars = mergedCount * 46;
+                    const estimatedChars = mergedCount * HTML_RECT_ESTIMATE_CHARS;
                     const estimatedKB = estimatedChars / 1000;
 
                     console.log(`Iteration ${i + 1}: width=${targetWidth}, height=${targetHeight}, kMeansPaletteSize=${MAIL_RENDER_CONFIG.kMeansPaletteSize}, cellsBeforeMerge=${beforeMergeCount}, mergedRectangles=${mergedCount}, estimatedChars=${estimatedChars}, estimatedKB=${estimatedKB.toFixed(2)}`);
@@ -1613,12 +1604,12 @@ export default function MailRendering() {
                                     {`Rectangles før merge: ${transformedResult.cells.length} | efter merge: ${mergedRectanglesCount} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
                                 </Text>
                                 <Text color="#2B4570" fontSize="sm">
-                                    {`Estimeret filstørrelse: ${(mergedRectanglesCount * 46).toLocaleString()} karakterer (baseret på merged)`}
+                                    {`Estimeret filstørrelse: ${(mergedRectanglesCount * HTML_RECT_ESTIMATE_CHARS).toLocaleString()} karakterer (baseret på merged)`}
                                 </Text>
                                 <Text color="#2B4570" fontSize="sm">
-                                    {`≈ ${(Math.round((mergedRectanglesCount * 46) / 1000)).toLocaleString()} KB`}
+                                    {`≈ ${(Math.round((mergedRectanglesCount * HTML_RECT_ESTIMATE_CHARS) / 1000)).toLocaleString()} KB`}
                                 </Text>
-                                {mergedRectanglesCount * 46 > 100000 && (
+                                {mergedRectanglesCount * HTML_RECT_ESTIMATE_CHARS > 100000 && (
                                     <Text color="red.600" fontSize="sm" fontWeight="bold">
                                         Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med nuværende opløsning.
                                     </Text>
@@ -1634,12 +1625,12 @@ export default function MailRendering() {
                                     {`BSP rectangles: ${bspRectsCount} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
                                 </Text>
                                 <Text color="#2B4570" fontSize="sm">
-                                    {`Estimeret filstørrelse: ${(bspRectsCount * 46).toLocaleString()} karakterer (baseret på BSP)`}
+                                    {`Estimeret filstørrelse: ${(bspRectsCount * HTML_RECT_ESTIMATE_CHARS).toLocaleString()} karakterer (baseret på BSP)`}
                                 </Text>
                                 <Text color="#2B4570" fontSize="sm">
-                                    {`≈ ${(Math.round((bspRectsCount * 46) / 1000)).toLocaleString()} KB`}
+                                    {`≈ ${(Math.round((bspRectsCount * HTML_RECT_ESTIMATE_CHARS) / 1000)).toLocaleString()} KB`}
                                 </Text>
-                                {bspRectsCount * 46 > 100000 && (
+                                {bspRectsCount * HTML_RECT_ESTIMATE_CHARS > 100000 && (
                                     <Text color="red.600" fontSize="sm" fontWeight="bold">
                                         Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med BSP-partition.
                                     </Text>
