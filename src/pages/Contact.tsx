@@ -15,7 +15,7 @@ async function sendMessage(name: string, email: string, message: string) {
     const sender = "test@christenchristensen.dk";
     const subject = `New message from ${name} (${email})`;
     const content = `<p>${message}</p>`;
-    const response = await fetch("/api/send-mail", {
+    const response = await fetch("https://api.christenchristensen.dk/api/send-mail", {
 
         method: "POST",
         headers: {
