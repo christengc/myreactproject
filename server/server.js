@@ -3,12 +3,20 @@ import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
 import mailRoutes from './routes/mail.js';
+import healthRoutes from './routes/health.js';
+import cors from 'cors';
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
+
+app.use(cors({
+  origin: 'https://www.christenchristensen.dk'
+}));
 
 app.use(express.json({ limit: '5mb' }));
 app.use('/api', mailRoutes);
+app.use('/',healthRoutes);
 
 app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
+  console.log(`Backend server running at http://localhost:${PORT}/`);
 });
