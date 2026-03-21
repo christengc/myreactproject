@@ -164,6 +164,7 @@ function transformImageBSP(file: File): Promise<TransformedImageResult> {
                 let prevResult: TransformedImageResult | null = null;
                 let prevKB = 0;
                 for (let i = 0; i < widths.length; i++) {
+                    console.log('started processing width iteration', widths[i]);
                     let targetWidth = Math.min(widths[i], image.width);
                     let targetHeight = Math.max(1, Math.floor(targetWidth / aspectRatio));
                     targetHeight = Math.min(targetHeight, image.height);
