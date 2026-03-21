@@ -12,7 +12,7 @@ app.use(morgan('combined'));
 const PORT = process.env.PORT || 8080;
 
 app.use(cors({
-  origin: 'https://www.christenchristensen.dk'
+  origin: ['https://www.christenchristensen.dk', 'https://christenchristensen.dk']
 }));
 
 app.use(express.json({ limit: '5mb' }));

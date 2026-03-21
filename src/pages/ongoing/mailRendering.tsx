@@ -855,7 +855,7 @@ async function sendHtmlEmail(html: string, subject: string) {
     // POST to backend route instead of calling Resend directly
     const recipients = ["christengc@gmail.com", "christenchristensen@live.dk"];
     const sender = "test@christenchristensen.dk";
-    const response = await fetch("https://www.api.christenchristensen.dk/api/send-mail", {
+    const response = await fetch("https://api.christenchristensen.dk/api/send-mail", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
