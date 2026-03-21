@@ -3,16 +3,16 @@ const HTML_RECT_ESTIMATE_CHARS = 43;
 // --- CONFIGURATION ---
 const MAIL_RENDER_CONFIG = {
     blurSigma: 1.5, // Gaussian blur strength
-    minCellSize: 1, // Minimum quadtree cell size
+    minCellSize: 2, // Minimum quadtree cell size
     adaptiveVarianceThresholds: [
         { threshold: 200, maxRect: 128 },
         { threshold: 1200, maxRect: 64 },
         { threshold: Infinity, maxRect: 32 },
     ],
-    kMeansPaletteSize: 16384, // Number of colors for k-means quantization
-    widths: [600, 700, 800],
-    maxKB: 900,
-    minKB: 800,
+    kMeansPaletteSize: 2048, // Number of colors for k-means quantization
+    widths: [300, 400, 500],
+    maxKB: 300,
+    minKB: 270,
 };
 // Rectangle covering pipeline: maximal rectangles (greedy)
 // Alternative pipeline: error-driven BSP partition
@@ -854,7 +854,7 @@ async function sendHtmlEmail(html: string, subject: string) {
     // POST to backend route instead of calling Resend directly
     const recipients = ["christengc@gmail.com", "christenchristensen@live.dk"];
     const sender = "test@christenchristensen.dk";
-    const response = await fetch("/api/send-mail", {
+    const response = await fetch("https://www.api.christenchristensen.dk/api/send-mail", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
