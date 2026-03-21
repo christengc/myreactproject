@@ -5,8 +5,10 @@ import express from 'express';
 import mailRoutes from './routes/mail.js';
 import healthRoutes from './routes/health.js';
 import cors from 'cors';
+import morgan from 'morgan'
 
 const app = express();
+app.use(morgan('combined'));
 const PORT = process.env.PORT || 8080;
 
 app.use(cors({
