@@ -1311,12 +1311,19 @@ function transformImage(file: File): Promise<TransformedImageResult> {
 }
 
 export default function MailRendering() {
+        // BSP parameter states
+        const [minCellSize, setMinCellSize] = useState(4);
+        const [kMeansPaletteSize, setKMeansPaletteSize] = useState(256);
+        const [bspWidth, setBspWidth] = useState(512);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [originalPreviewUrl, setOriginalPreviewUrl] = useState<string | null>(null);
     const [transformedResult, setTransformedResult] = useState<TransformedImageResult | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [selectedPipeline, setSelectedPipeline] = useState<'rectangle' | 'bsp' | null>(null);
+
+    // New: track if an image is uploaded and ready for transform
+    const [isImageUploaded, setIsImageUploaded] = useState(false);
 
     // Rectangle Cover pipeline
     const imageHtmlSectionRectangleCover = useMemo(() => {
@@ -1460,28 +1467,39 @@ export default function MailRendering() {
     }, [transformedResult]);
 
 
-    const handleImageUpload = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
-        if (!selectedFile || !selectedPipeline) {
-            setErrorMessage("Vælg billede og pipeline.");
-            return;
-        }
-
+    // Step 1: Upload handler (just sets file and preview)
+    const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0] ?? null;
+        setSelectedFile(file);
         setErrorMessage(null);
-        setIsProcessing(true);
-
-        try {
-            const sourcePreview = URL.createObjectURL(selectedFile);
+        setTransformedResult(null);
+        if (file) {
+            const sourcePreview = URL.createObjectURL(file);
             setOriginalPreviewUrl((previousUrl) => {
                 if (previousUrl && previousUrl.startsWith("blob:")) {
                     URL.revokeObjectURL(previousUrl);
                 }
                 return sourcePreview;
             });
+            setIsImageUploaded(true);
+        } else {
+            setOriginalPreviewUrl(null);
+            setIsImageUploaded(false);
+        }
+    };
 
+    // Step 2: Transform handler (runs after upload)
+    const handleTransform = async (pipeline: 'rectangle' | 'bsp') => {
+        if (!selectedFile) {
+            setErrorMessage("Vælg billede først.");
+            return;
+        }
+        setSelectedPipeline(pipeline);
+        setErrorMessage(null);
+        setIsProcessing(true);
+        try {
             let transformed: TransformedImageResult;
-            if (selectedPipeline === 'bsp') {
+            if (pipeline === 'bsp') {
                 transformed = await transformImageBSP(selectedFile);
             } else {
                 transformed = await transformImage(selectedFile);
@@ -1494,18 +1512,6 @@ export default function MailRendering() {
         } finally {
             setIsProcessing(false);
         }
-    };
-
-    // Separate upload handlers for each pipeline
-    const handleRectangleUpload = async (event: React.MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault();
-        setSelectedPipeline('rectangle');
-        await handleImageUpload(event as any);
-    };
-    const handleBspUpload = async (event: React.MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault();
-        setSelectedPipeline('bsp');
-        await handleImageUpload(event as any);
     };
 
     return (
@@ -1546,26 +1552,43 @@ export default function MailRendering() {
                         id="mail-image-upload"
                         type="file"
                         accept="image/*"
-                        onChange={(event) => {
-                            const file = event.target.files?.[0] ?? null;
-                            setSelectedFile(file);
-                            setErrorMessage(null);
-                        }}
+                        onChange={handleImageSelect}
                     />
+                    {/* BSP parameter controls */}
+                    <Box display="flex" gap="1em" mb="1em" alignItems="center">
+                        <Box>
+                            <label htmlFor="minCellSize-select" style={{ fontWeight: 600, color: "#2B4570" }}>minCellSize:</label>
+                            <select id="minCellSize-select" value={minCellSize} onChange={e => setMinCellSize(Number(e.target.value))} style={{ marginLeft: 8 }}>
+                                {[1,2,4,8,16].map(v => <option key={v} value={v}>{v}</option>)}
+                            </select>
+                        </Box>
+                        <Box>
+                            <label htmlFor="kMeansPaletteSize-select" style={{ fontWeight: 600, color: "#2B4570" }}>KMeansPaletteSize:</label>
+                            <select id="kMeansPaletteSize-select" value={kMeansPaletteSize} onChange={e => setKMeansPaletteSize(Number(e.target.value))} style={{ marginLeft: 8 }}>
+                                {[256,512,1024,2048,4096,8192,16384].map(v => <option key={v} value={v}>{v}</option>)}
+                            </select>
+                        </Box>
+                        <Box>
+                            <label htmlFor="bspWidth-select" style={{ fontWeight: 600, color: "#2B4570" }}>Width:</label>
+                            <select id="bspWidth-select" value={bspWidth} onChange={e => setBspWidth(Number(e.target.value))} style={{ marginLeft: 8 }}>
+                                {[100,200,300,400,500,600,700,800,900,1024,2048,4096,8192,16384].map(v => <option key={v} value={v}>{v}</option>)}
+                            </select>
+                        </Box>
+                    </Box>
                     <Box display="flex" gap="1em" mt="1em">
                         <Button
-                            bg="cyan.solid"
-                            loading={isProcessing}
-                            onClick={handleRectangleUpload}
+                            bg="gray.600"
+                            isDisabled={!isImageUploaded || isProcessing}
+                            onClick={() => handleTransform('rectangle')}
                         >
-                            Upload og transform (Rectangle Cover)
+                            Transform (Rectangle Cover)
                         </Button>
                         <Button
-                            bg="purple.solid"
-                            loading={isProcessing}
-                            onClick={handleBspUpload}
+                            bg="purple.600"
+                            isDisabled={!isImageUploaded || isProcessing}
+                            onClick={() => handleTransform('bsp')}
                         >
-                            Upload og transform (BSP Partition)
+                            Transform (BSP Partition)
                         </Button>
                     </Box>
                 </Box>
