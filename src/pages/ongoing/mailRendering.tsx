@@ -1325,16 +1325,7 @@ export default function MailRendering() {
     // New: track if an image is uploaded and ready for transform
     const [isImageUploaded, setIsImageUploaded] = useState(false);
 
-    // Rectangle Cover pipeline
-    const imageHtmlSectionRectangleCover = useMemo(() => {
-        if (!transformedResult) return "";
-        return createHtmlSectionRectangleCover(transformedResult, selectedFile?.name ?? null);
-    }, [selectedFile, transformedResult]);
 
-    const mergedRectanglesCount = useMemo(() => {
-        if (!transformedResult) return 0;
-        return mergeRectangles(transformedResult.cells, transformedResult.width, transformedResult.height).length;
-    }, [transformedResult]);
 
     // BSP Partition pipeline
     const imageHtmlSectionBSPPartition = useMemo(() => {
@@ -1576,13 +1567,7 @@ export default function MailRendering() {
                         </Box>
                     </Box>
                     <Box display="flex" gap="1em" mt="1em">
-                        <Button
-                            bg="gray.600"
-                            isDisabled={!isImageUploaded || isProcessing}
-                            onClick={() => handleTransform('rectangle')}
-                        >
-                            Transform (Rectangle Cover)
-                        </Button>
+                        {/* Rectangle Cover button removed */}
                         <Button
                             bg="purple.600"
                             isDisabled={!isImageUploaded || isProcessing}
@@ -1617,106 +1602,31 @@ export default function MailRendering() {
                     </Box>
                 )}
 
-                {transformedResult && (
+                {transformedResult && selectedPipeline === 'bsp' && (
                     <Box mb="1.5em">
-                        {selectedPipeline === 'rectangle' && (
-                            <>
-                                <Heading as="h3" size="md" mb="0.5em">
-                                    Rectangle Cover data
-                                </Heading>
-                                <Text color="#2B4570">
-                                    {`Rectangles før merge: ${transformedResult.cells.length} | efter merge: ${mergedRectanglesCount} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
-                                </Text>
-                                <Text color="#2B4570" fontSize="sm">
-                                    {`Estimeret filstørrelse: ${(mergedRectanglesCount * HTML_RECT_ESTIMATE_CHARS).toLocaleString()} karakterer (baseret på merged)`}
-                                </Text>
-                                <Text color="#2B4570" fontSize="sm">
-                                    {`≈ ${(Math.round((mergedRectanglesCount * HTML_RECT_ESTIMATE_CHARS) / 1000)).toLocaleString()} KB`}
-                                </Text>
-                                {mergedRectanglesCount * HTML_RECT_ESTIMATE_CHARS > 100000 && (
-                                    <Text color="red.600" fontSize="sm" fontWeight="bold">
-                                        Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med nuværende opløsning.
-                                    </Text>
-                                )}
-                            </>
-                        )}
-                        {selectedPipeline === 'bsp' && (
-                            <>
-                                <Heading as="h3" size="md" mb="0.5em">
-                                    BSP Partition data
-                                </Heading>
-                                <Text color="#2B4570">
-                                    {`BSP rectangles: ${bspRectsCount} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
-                                </Text>
-                                <Text color="#2B4570" fontSize="sm">
-                                    {`Estimeret filstørrelse: ${(bspRectsCount * HTML_RECT_ESTIMATE_CHARS).toLocaleString()} karakterer (baseret på BSP)`}
-                                </Text>
-                                <Text color="#2B4570" fontSize="sm">
-                                    {`≈ ${(Math.round((bspRectsCount * HTML_RECT_ESTIMATE_CHARS) / 1000)).toLocaleString()} KB`}
-                                </Text>
-                                {bspRectsCount * HTML_RECT_ESTIMATE_CHARS > 100000 && (
-                                    <Text color="red.600" fontSize="sm" fontWeight="bold">
-                                        Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med BSP-partition.
-                                    </Text>
-                                )}
-                            </>
+                        <Heading as="h3" size="md" mb="0.5em">
+                            BSP Partition data
+                        </Heading>
+                        <Text color="#2B4570">
+                            {`BSP rectangles: ${bspRectsCount} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
+                        </Text>
+                        <Text color="#2B4570" fontSize="sm">
+                            {`Estimeret filstørrelse: ${(bspRectsCount * HTML_RECT_ESTIMATE_CHARS).toLocaleString()} karakterer (baseret på BSP)`}
+                        </Text>
+                        <Text color="#2B4570" fontSize="sm">
+                            {`≈ ${(Math.round((bspRectsCount * HTML_RECT_ESTIMATE_CHARS) / 1000)).toLocaleString()} KB`}
+                        </Text>
+                        {bspRectsCount * HTML_RECT_ESTIMATE_CHARS > 100000 && (
+                            <Text color="red.600" fontSize="sm" fontWeight="bold">
+                                Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med BSP-partition.
+                            </Text>
                         )}
                     </Box>
                 )}
 
                 {/* BSP Partition stats and preview */}
 
-                {imageHtmlSectionRectangleCover && (
-                    selectedPipeline === 'rectangle' && (
-                        <Box mb="1.5em">
-                            <Heading as="h3" size="md" mb="0.5em">
-                                Rectangle Cover metode
-                            </Heading>
-                            <Text mb="1em">HTML genereret ved at dække billedet med størst mulige ensfarvede rektangler (maximal rectangles, greedy).</Text>
-                            <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionRectangleCover }} />
-                            <Box display="flex" alignItems="center" mb="0.5em">
-                                <Button
-                                    size="sm"
-                                    colorScheme="cyan"
-                                    onClick={async () => {
-                                        try {
-                                            await navigator.clipboard.writeText(imageHtmlSectionRectangleCover);
-                                            setErrorMessage("HTML kopieret!");
-                                            setTimeout(() => setErrorMessage(null), 1200);
-                                        } catch {
-                                            setErrorMessage("Kunne ikke kopiere HTML.");
-                                            setTimeout(() => setErrorMessage(null), 1200);
-                                        }
-                                    }}
-                                    mr="1em"
-                                >
-                                    Kopier HTML
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    colorScheme="green"
-                                    style={{ display: 'none' }}
-                                    onClick={async () => {
-                                        await sendHtmlEmail(imageHtmlSectionRectangleCover, "Mail Rendering - Rectangle Cover metode");
-                                        setErrorMessage("Email sendt!");
-                                        setTimeout(() => setErrorMessage(null), 1200);
-                                    }}
-                                    mr="1em"
-                                >
-                                    Send email
-                                </Button>
-                                {errorMessage && (
-                                    <Text color="cyan.700" fontSize="sm">
-                                        {errorMessage}
-                                    </Text>
-                                )}
-                            </Box>
-                            <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
-                                {imageHtmlSectionRectangleCover || "Ingen HTML blev genereret."}
-                            </Box>
-                        </Box>
-                    )
-                )}
+                {/* Rectangle Cover preview removed */}
 
                 {/* BSP Partition preview */}
                 {selectedPipeline === 'bsp' && imageHtmlSectionBSPPartition && (
