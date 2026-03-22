@@ -1475,6 +1475,8 @@ export default function MailRendering() {
 
     // New: track if an image is uploaded and ready for transform
     const [isImageUploaded, setIsImageUploaded] = useState(false);
+    // New: hex code length selection
+    const [useShortHex, setUseShortHex] = useState(false);
 
 
 
@@ -1559,6 +1561,13 @@ export default function MailRendering() {
                     />
                     {/* BSP parameter controls */}
                     <Box display="flex" gap="1em" mb="1em" alignItems="center">
+                                                <Box>
+                                                    <label htmlFor="hexLength-select" style={{ fontWeight: 600, color: "#2B4570" }}>Hex Code:</label>
+                                                    <select id="hexLength-select" value={useShortHex ? "short" : "long"} onChange={e => setUseShortHex(e.target.value === "short")} style={{ marginLeft: 8 }}>
+                                                        <option value="long">6-digit (#RRGGBB)</option>
+                                                        <option value="short">3-digit (#RGB)</option>
+                                                    </select>
+                                                </Box>
                         <Box>
                             <label htmlFor="minCellSize-select" style={{ fontWeight: 600, color: "#2B4570" }}>minCellSize:</label>
                             <select id="minCellSize-select" value={minCellSize} onChange={e => setMinCellSize(Number(e.target.value))} style={{ marginLeft: 8 }}>
@@ -1574,7 +1583,7 @@ export default function MailRendering() {
                         <Box>
                             <label htmlFor="bspWidth-select" style={{ fontWeight: 600, color: "#2B4570" }}>Width:</label>
                             <select id="bspWidth-select" value={bspWidth} onChange={e => setBspWidth(Number(e.target.value))} style={{ marginLeft: 8 }}>
-                                {[100,200,300,400,500,600,700,800,900,1024,2048,4096,8192,16384].map(v => <option key={v} value={v}>{v}</option>)}
+                                {Array.from({length: 15}, (_, i) => 100 + i * 50).map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
                         </Box>
                     </Box>
@@ -1593,22 +1602,19 @@ export default function MailRendering() {
                                     setErrorMessage(null);
                                     try {
                                         const pipeline = new ImageToHtmlTable();
-                                        const html = await pipeline.processImageFile(selectedFile, bspWidth, kMeansPaletteSize, 1.5, minCellSize);
+                                        const html = await pipeline.processImageFile(selectedFile, bspWidth, kMeansPaletteSize, 1.5, minCellSize, useShortHex);
                                         setHtmlTable(html);
                                         setHtmlTableStats(null); // No stats from class
                                     } catch (err) {
                                         const msg = err instanceof Error ? err.message : String(err);
-                                        setErrorMessage("ImageToHtmlTable transform failed: " + msg);
-                                        // Also log full error to console for debugging
-                                        // eslint-disable-next-line no-console
-                                        console.error("ImageToHtmlTable error:", err);
+                                        setErrorMessage(msg);
                                     } finally {
                                         setIsProcessing(false);
                                     }
                                 }
                             }}
                         >
-                            Transform (ImageToHtmlTable class)
+                            Transform (ImageToHtmlTable)
                         </Button>
                     </Box>
                 </Box>
@@ -1674,6 +1680,16 @@ export default function MailRendering() {
                             BSP Partition metode
                         </Heading>
                         <Text mb="1em">HTML genereret ved error-driven BSP partition af billedet.</Text>
+                        {/* Preview only the first 4 lines of the HTML as text, with ellipsis if longer */}
+                        <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap" maxHeight="6em">
+                            {(() => {
+                                if (!htmlTable) return "Ingen BSP HTML blev genereret.";
+                                const lines = htmlTable.split(/\r?\n/);
+                                if (lines.length <= 4) return htmlTable;
+                                return lines.slice(0, 4).join("\n") + "\n...";
+                            })()}
+                        </Box>
+                        {/* Show the HTML image preview below the text preview */}
                         <Box mb="1em" dangerouslySetInnerHTML={{ __html: htmlTable }} />
                         <Box display="flex" alignItems="center" mb="0.5em">
                             <Button
@@ -1693,9 +1709,6 @@ export default function MailRendering() {
                             >
                                 Kopier BSP HTML
                             </Button>
-                        </Box>
-                        <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
-                            {htmlTable || "Ingen BSP HTML blev genereret."}
                         </Box>
                     </Box>
                 )}

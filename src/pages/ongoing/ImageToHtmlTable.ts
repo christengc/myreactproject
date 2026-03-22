@@ -3,7 +3,14 @@
 
 export class ImageToHtmlTable {
     // Main pipeline: accepts a File, target width, and kMeansClusters, returns HTML string (async API)
-    async processImageFile(file: File, targetWidth: number, kMeansClusters: number, blurSigma: number = 1.5, minCellSize: number = 4): Promise<string> {
+    async processImageFile(
+        file: File,
+        targetWidth: number,
+        kMeansClusters: number,
+        blurSigma: number = 1.5,
+        minCellSize: number = 4,
+        useShortHex: boolean = false
+    ): Promise<string> {
         const t0 = performance.now();
         console.log('[ImageToHtmlTable] Starting processImageFile');
         const dataUrl = await this.readFileAsDataUrl(file);
@@ -30,7 +37,7 @@ export class ImageToHtmlTable {
         bspRects = this.mergeRectangles(bspRects, width, height);
         const t7 = performance.now();
         console.log(`[ImageToHtmlTable] Rectangles merged in ${(t7-t6).toFixed(1)}ms, merged rects: ${bspRects.length}`);
-        const html = this.createHtmlSectionFromBspRects(bspRects, imageData.width, imageData.height, file.name);
+        const html = this.createHtmlSectionFromBspRects(bspRects, imageData.width, imageData.height, file.name, useShortHex);
         const t8 = performance.now();
         console.log(`[ImageToHtmlTable] HTML generated in ${(t8-t7).toFixed(1)}ms`);
         console.log(`[ImageToHtmlTable] Total time: ${(t8-t0).toFixed(1)}ms`);
@@ -39,59 +46,101 @@ export class ImageToHtmlTable {
 
     // Rectangle merging: horizontal then vertical
     private mergeRectangles(cells: BSPNode[], width: number, height: number): BSPNode[] {
-        // Build grid for placement (for horizontal merge)
-        const grid: (BSPNode | null)[][] = Array.from({ length: height }, () => Array(width).fill(null));
-        cells.forEach(cell => {
-            for (let dy = 0; dy < cell.height; dy++) {
-                for (let dx = 0; dx < cell.width; dx++) {
-                    const y = cell.y + dy;
-                    const x = cell.x + dx;
-                    if (y < height && x < width) {
-                        grid[y][x] = cell;
+        // Multi-pass merge: repeat horizontal and vertical merge until stable
+        let merged = cells.slice();
+        let changed = true;
+        while (changed) {
+            changed = false;
+            // Build grid for placement
+            const grid: (BSPNode | null)[][] = Array.from({ length: height }, () => Array(width).fill(null));
+            merged.forEach(cell => {
+                for (let dy = 0; dy < cell.height; dy++) {
+                    for (let dx = 0; dx < cell.width; dx++) {
+                        const y = cell.y + dy;
+                        const x = cell.x + dx;
+                        if (y < height && x < width) {
+                            grid[y][x] = cell;
+                        }
                     }
                 }
-            }
-        });
-        // 1. Horizontal merge
-        const horizontalMerged: BSPNode[] = [];
-        for (let y = 0; y < height; y++) {
-            let x = 0;
-            while (x < width) {
-                const cell = grid[y][x];
-                if (!cell) { x++; continue; }
-                const color = cell.color;
-                let maxW = 1;
-                while (x + maxW < width && grid[y][x + maxW] && grid[y][x + maxW]?.color === color) {
-                    maxW++;
+            });
+            // Horizontal merge
+            let horMerged: BSPNode[] = [];
+            const usedH = new Set<number>();
+            for (let y = 0; y < height; y++) {
+                let x = 0;
+                while (x < width) {
+                    const cell = grid[y][x];
+                    if (!cell) { x++; continue; }
+                    // Only merge if this is the top-left
+                    if (cell.x !== x || cell.y !== y) { x++; continue; }
+                    let maxW = cell.width;
+                    let mergedRect = cell;
+                    // Try to merge with right neighbor
+                    while (x + maxW < width) {
+                        const neighbor = grid[y][x + maxW];
+                        if (
+                            neighbor &&
+                            neighbor.y === y &&
+                            neighbor.height === cell.height &&
+                            neighbor.color === cell.color &&
+                            neighbor.x === x + maxW
+                        ) {
+                            // Merge
+                            mergedRect = {
+                                x,
+                                y,
+                                width: mergedRect.width + neighbor.width,
+                                height: mergedRect.height,
+                                color: cell.color,
+                                error: 0
+                            };
+                            maxW += neighbor.width;
+                            changed = true;
+                        } else {
+                            break;
+                        }
+                    }
+                    horMerged.push(mergedRect);
+                    x += maxW;
                 }
-                horizontalMerged.push({ x, y, width: maxW, height: 1, color, error: 0 });
-                x += maxW;
             }
-        }
-        // 2. Vertical merge: only merge perfectly aligned horizontal runs
-        const merged: BSPNode[] = [];
-        const used: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
-        for (let i = 0; i < horizontalMerged.length; i++) {
-            const rect = horizontalMerged[i];
-            if (used[rect.y][rect.x]) continue;
-            let maxH = 1;
-            let canExpand = true;
-            while (canExpand && rect.y + maxH < height) {
-                // Find the next horizontal run at the same x, width, and color
-                const next = horizontalMerged.find(r => r.x === rect.x && r.y === rect.y + maxH && r.width === rect.width && r.color === rect.color && !used[r.y][r.x]);
-                if (!next) {
-                    canExpand = false;
-                    break;
+            // Vertical merge
+            let verMerged: BSPNode[] = [];
+            const usedV = new Set<number>();
+            for (let i = 0; i < horMerged.length; i++) {
+                const rect = horMerged[i];
+                // Only merge if this is the top-left
+                if (rect.x !== rect.x || rect.y !== rect.y) continue;
+                let maxH = rect.height;
+                let mergedRect = rect;
+                // Try to merge with neighbor below
+                while (true) {
+                    const neighbor = horMerged.find(r =>
+                        r.x === rect.x &&
+                        r.y === mergedRect.y + mergedRect.height &&
+                        r.width === mergedRect.width &&
+                        r.color === mergedRect.color
+                    );
+                    if (neighbor) {
+                        mergedRect = {
+                            x: mergedRect.x,
+                            y: mergedRect.y,
+                            width: mergedRect.width,
+                            height: mergedRect.height + neighbor.height,
+                            color: mergedRect.color,
+                            error: 0
+                        };
+                        // Remove neighbor from horMerged
+                        horMerged = horMerged.filter(r => r !== neighbor);
+                        changed = true;
+                    } else {
+                        break;
+                    }
                 }
-                maxH++;
+                verMerged.push(mergedRect);
             }
-            // Mark all merged runs as used
-            for (let dy = 0; dy < maxH; dy++) {
-                for (let dx = 0; dx < rect.width; dx++) {
-                    used[rect.y + dy][rect.x + dx] = true;
-                }
-            }
-            merged.push({ x: rect.x, y: rect.y, width: rect.width, height: maxH, color: rect.color, error: 0 });
+            merged = verMerged;
         }
         return merged;
     }
@@ -272,7 +321,13 @@ export class ImageToHtmlTable {
     }
 
     // --- HTML generation ---
-    private createHtmlSectionFromBspRects(rects: BSPNode[], width: number, height: number, fileName: string | null): string {
+    private createHtmlSectionFromBspRects(
+        rects: BSPNode[],
+        width: number,
+        height: number,
+        fileName: string | null,
+        useShortHex: boolean = false
+    ): string {
         const escapeHtmlAttribute = (value: string) =>
             value.replaceAll("&", "&amp;")
                 .replaceAll("\"", "&quot;")
@@ -292,34 +347,47 @@ export class ImageToHtmlTable {
                 }
             }
         });
+        // Use merged rectangles and output <td> with colspan/rowspan like the old method
+        const mergedRects = rects;
+        // Track which cells have been rendered
+        const rendered: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
         let tableRows = "";
         for (let y = 0; y < height; y++) {
             let rowHtml = "";
-            let x = 0;
-            while (x < width) {
-                const cell = grid[y][x];
-                if (!cell) {
-                    x++;
-                    continue;
+            for (let x = 0; x < width; x++) {
+                // Only render <td> at the top-left of each rectangle
+                const rect = mergedRects.find(r => r.x === x && r.y === y);
+                if (rect && !rendered[y][x]) {
+                    // Convert rgb(...) to hex for bgcolor
+                    const rgbMatch = rect.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    let hexColor = "#000000";
+                    if (rgbMatch) {
+                        let r = parseInt(rgbMatch[1], 10);
+                        let g = parseInt(rgbMatch[2], 10);
+                        let b = parseInt(rgbMatch[3], 10);
+                        if (useShortHex) {
+                            // Quantize to 4 bits per channel, then use #rgb
+                            const r4 = (r >> 4) & 0xf;
+                            const g4 = (g >> 4) & 0xf;
+                            const b4 = (b >> 4) & 0xf;
+                            hexColor = `#${r4.toString(16)}${g4.toString(16)}${b4.toString(16)}`;
+                        } else {
+                            // Standard 6-digit hex
+                            const toHex = (n: number) => n.toString(16).padStart(2, '0');
+                            hexColor = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+                        }
+                    }
+                    let attrs = `bgcolor=\"${hexColor}\"`;
+                    if (rect.width > 1) attrs += ` colspan=\"${rect.width}\"`;
+                    if (rect.height > 1) attrs += ` rowspan=\"${rect.height}\"`;
+                    rowHtml += `<td ${attrs}></td>`;
+                    // Mark all covered cells as rendered
+                    for (let dy = 0; dy < rect.height; dy++) {
+                        for (let dx = 0; dx < rect.width; dx++) {
+                            if (rendered[y + dy]) rendered[y + dy][x + dx] = true;
+                        }
+                    }
                 }
-                // Find horizontal run of same color
-                let runLength = 1;
-                while (x + runLength < width && grid[y][x + runLength] && grid[y][x + runLength]?.color === cell.color) {
-                    runLength++;
-                }
-                // Convert rgb(...) to hex for bgcolor
-                const rgbMatch = cell.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-                let hexColor = "#000000";
-                if (rgbMatch) {
-                    const r = parseInt(rgbMatch[1], 10);
-                    const g = parseInt(rgbMatch[2], 10);
-                    const b = parseInt(rgbMatch[3], 10);
-                    hexColor = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-                }
-                rowHtml += `<td bgcolor="${hexColor}" width="${runLength}" height="1"` +
-                    (runLength > 1 ? ` colspan="${runLength}"` : "") +
-                    `></td>`;
-                x += runLength;
             }
             tableRows += `<tr>${rowHtml}</tr>`;
         }
