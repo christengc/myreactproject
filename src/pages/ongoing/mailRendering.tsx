@@ -1,3 +1,4 @@
+import { ImageToHtmlTable } from "./ImageToHtmlTable";
 // --- CONSTANTS ---
 const HTML_RECT_ESTIMATE_CHARS = 43;
 // --- CONFIGURATION ---
@@ -17,7 +18,14 @@ const MAIL_RENDER_CONFIG = {
 // Rectangle covering pipeline: maximal rectangles (greedy)
 // Alternative pipeline: error-driven BSP partition
 
-// --- BSP Partition rectangle count for a given cell grid ---
+/**
+ * Counts the number of rectangles produced by BSP partitioning on a grid of colored cells.
+ * Used to estimate the output size of the BSP HTML table.
+ * @param cells Array of QuadCell rectangles representing the image.
+ * @param width Width of the image grid.
+ * @param height Height of the image grid.
+ * @returns Number of BSP rectangles.
+ */
 function countBspRectsFromCells(cells: QuadCell[], width: number, height: number): number {
     // Build grid
     const grid: string[][] = Array.from({ length: height }, () => Array(width).fill(""));
@@ -138,7 +146,13 @@ function countBspRectsFromCells(cells: QuadCell[], width: number, height: number
     return rects.length;
 }
 
-// --- BSP-aware transformImage ---
+/**
+ * Transforms an image file into a set of rectangles using the BSP partitioning pipeline.
+ * Handles resizing, blurring, color quantization, and BSP partitioning.
+ * Returns a TransformedImageResult with the rectangles for HTML table generation.
+ * @param file The image file to transform.
+ * @returns Promise resolving to TransformedImageResult.
+ */
 function transformImageBSP(file: File): Promise<TransformedImageResult> {
     return new Promise((resolve, reject) => {
         void (async () => {
@@ -183,7 +197,10 @@ function transformImageBSP(file: File): Promise<TransformedImageResult> {
                     context.drawImage(blurCanvas, 0, 0, image.width, image.height, 0, 0, targetWidth, targetHeight);
 
                     const pixels = context.getImageData(0, 0, targetWidth, targetHeight);
+                    const tBspStart = performance.now();
                     let cells = buildQuadtreeCells(pixels);
+                    const tBspEnd = performance.now();
+                    console.log(`[OLD PIPELINE] BSP partitioned in ${(tBspEnd - tBspStart).toFixed(1)}ms, rects: ${cells.length} (width=${targetWidth}, height=${targetHeight})`);
                     // Kvantisér farver efter quadtree vha. k-means (palette på kMeansPaletteSize farver)
                     const quantizeColorsKMeans = (cells: QuadCell[], k: number): QuadCell[] => {
                         const colors = cells.map(cell => {
@@ -263,6 +280,13 @@ function transformImageBSP(file: File): Promise<TransformedImageResult> {
         })();
     });
 }
+/**
+ * Generates an HTML table section representing the image using BSP partitioned rectangles.
+ * Merges adjacent rectangles for compactness and outputs a table suitable for email.
+ * @param result The transformed image result (rectangles, width, height).
+ * @param fileName The original file name for labeling.
+ * @returns HTML string for the BSP partitioned image.
+ */
 function createHtmlSectionBSPPartition(result: TransformedImageResult, fileName: string | null): string {
         // Multi-pass rectangle merging for BSP rectangles
         function multiPassMerge(rects: BSPNode[], width: number, height: number): BSPNode[] {
@@ -506,6 +530,13 @@ function createHtmlSectionBSPPartition(result: TransformedImageResult, fileName:
     html = html.replace(/\n/g, '').replace(/\s{2,}/g, '').replace(/>\s+</g, '><');
     return html;
 }
+/**
+ * Generates an HTML table section using a greedy rectangle covering algorithm.
+ * Each rectangle covers as large an area as possible with the same color.
+ * @param result The transformed image result (rectangles, width, height).
+ * @param fileName The original file name for labeling.
+ * @returns HTML string for the rectangle cover image.
+ */
 function createHtmlSectionRectangleCover(result: TransformedImageResult, fileName: string | null): string {
     const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
     // Build pixel grid
@@ -600,6 +631,13 @@ function createHtmlSectionRectangleCover(result: TransformedImageResult, fileNam
     return html;
 }
 // New pipeline: PixelGridHtml - each cell is a pixel, no merging, 12-bit color
+/**
+ * Generates an HTML table where each cell is a pixel (no merging), using 12-bit color quantization.
+ * Used for a pixel-perfect but less compact representation.
+ * @param result The transformed image result (rectangles, width, height).
+ * @param fileName The original file name for labeling.
+ * @returns HTML string for the pixel grid image.
+ */
 function createHtmlSectionPixelGrid(result: TransformedImageResult, fileName: string | null): string {
     const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
     // Build grid for placement
@@ -656,6 +694,14 @@ function createHtmlSectionPixelGrid(result: TransformedImageResult, fileName: st
 }
 // New method: y-boundary based table generation
 // Third method: simple 10% scale, 1 cell per pixel, horizontal merge only
+/**
+ * Generates a simple HTML table by downscaling the image to 10% size and merging horizontal runs of the same color.
+ * Used for a very compact, low-fidelity preview.
+ * @param file The image file to transform.
+ * @param fileName The original file name for labeling.
+ * @param originalPreviewUrl Preview URL (unused in logic).
+ * @returns Promise resolving to HTML string for the simple table.
+ */
 function createHtmlSectionSimple10pct(file: File | null, fileName: string | null, originalPreviewUrl: string | null): Promise<string> {
     if (!file) return Promise.resolve("");
     const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
@@ -731,6 +777,13 @@ function createHtmlSectionSimple10pct(file: File | null, fileName: string | null
         }
     });
 }
+/**
+ * Generates an HTML table by merging horizontal runs of the same color (Y-boundary method).
+ * Each row is merged as much as possible, but no vertical merging is done.
+ * @param result The transformed image result (rectangles, width, height).
+ * @param fileName The original file name for labeling.
+ * @returns HTML string for the Y-boundary merged image.
+ */
 function createHtmlSectionYBoundary(result: TransformedImageResult, fileName: string | null): string {
     const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
     // Build grid for placement
@@ -784,7 +837,14 @@ function createHtmlSectionYBoundary(result: TransformedImageResult, fileName: st
     </head>
     <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Horisontal Merge Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
 }
-// Merge adjacent rectangles with same color horizontally and vertically
+/**
+ * Merges adjacent rectangles (QuadCells) with the same color horizontally and then vertically.
+ * Produces a more compact set of rectangles for HTML table generation.
+ * @param cells Array of QuadCell rectangles.
+ * @param width Width of the image grid.
+ * @param height Height of the image grid.
+ * @returns Array of merged QuadCells.
+ */
 function mergeRectangles(cells: QuadCell[], width: number, height: number): QuadCell[] {
     // Build grid
     const grid: (QuadCell | null)[][] = Array.from({ length: height }, () => Array(width).fill(null));
@@ -851,6 +911,12 @@ function mergeRectangles(cells: QuadCell[], width: number, height: number): Quad
 import { useEffect, useMemo, useState } from "react";
 import { Box, Button, Container, Heading, Text, Breadcrumb, Image as ChakraImage, Accordion } from "@chakra-ui/react";
 // Placeholder for Resend integration
+/**
+ * Sends an HTML email using a backend API endpoint.
+ * Used for testing email rendering of generated HTML.
+ * @param html The HTML content to send.
+ * @param subject The email subject.
+ */
 async function sendHtmlEmail(html: string, subject: string) {
     // POST to backend route instead of calling Resend directly
     const recipients = ["christengc@gmail.com", "christenchristensen@live.dk"];
@@ -892,6 +958,11 @@ type TransformedImageResult = {
     cells: QuadCell[];
 };
 
+/**
+ * Escapes special characters for safe use in HTML attributes.
+ * @param value The string to escape.
+ * @returns Escaped string.
+ */
 function escapeHtmlAttribute(value: string): string {
     return value
         .replaceAll("&", "&amp;")
@@ -900,6 +971,11 @@ function escapeHtmlAttribute(value: string): string {
         .replaceAll(">", "&gt;");
 }
 
+/**
+ * Calculates the next power of two greater than or equal to the given value.
+ * @param value Input number.
+ * @returns Next power of two.
+ */
 function nextPowerOfTwo(value: number): number {
     let power = 1;
     while (power < value) {
@@ -908,6 +984,12 @@ function nextPowerOfTwo(value: number): number {
     return power;
 }
 
+/**
+ * Reads a File object as a data URL (base64 encoded string).
+ * Used for loading images in the browser.
+ * @param file The image file to read.
+ * @returns Promise resolving to the data URL string.
+ */
 function readFileAsDataUrl(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -917,6 +999,12 @@ function readFileAsDataUrl(file: File): Promise<string> {
     });
 }
 
+/**
+ * Loads an image from a data URL and returns an HTMLImageElement.
+ * Used for image processing in the browser.
+ * @param dataUrl The data URL of the image.
+ * @returns Promise resolving to the loaded HTMLImageElement.
+ */
 function loadImage(dataUrl: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const image = new window.Image();
@@ -927,6 +1015,14 @@ function loadImage(dataUrl: string): Promise<HTMLImageElement> {
 }
 
 // Helper: RGB to XYZ
+/**
+ * Converts RGB color values to CIE XYZ color space.
+ * Used for color quantization and analysis.
+ * @param r Red channel (0-255)
+ * @param g Green channel (0-255)
+ * @param b Blue channel (0-255)
+ * @returns Array [x, y, z] in XYZ color space.
+ */
 function rgbToXyz(r: number, g: number, b: number) {
     // Convert sRGB to linear
     function srgbToLinear(c: number) {
@@ -944,6 +1040,14 @@ function rgbToXyz(r: number, g: number, b: number) {
 }
 
 // Helper: XYZ to Lab
+/**
+ * Converts CIE XYZ color values to CIE Lab color space.
+ * Used for perceptual color difference calculations.
+ * @param x X value
+ * @param y Y value
+ * @param z Z value
+ * @returns Array [L, a, b] in Lab color space.
+ */
 function xyzToLab(x: number, y: number, z: number) {
     // D65 reference white
     const refX = 0.95047;
@@ -965,12 +1069,27 @@ function xyzToLab(x: number, y: number, z: number) {
 }
 
 // Helper: RGB to Lab
+/**
+ * Converts RGB color values directly to CIE Lab color space.
+ * Used for color quantization and analysis.
+ * @param r Red channel (0-255)
+ * @param g Green channel (0-255)
+ * @param b Blue channel (0-255)
+ * @returns Array [L, a, b] in Lab color space.
+ */
 function rgbToLab(r: number, g: number, b: number) {
     const [x, y, z] = rgbToXyz(r, g, b);
     return xyzToLab(x, y, z);
 }
 
 // Helper: DeltaE (CIE76)
+/**
+ * Calculates the CIE76 DeltaE (perceptual color difference) between two Lab colors.
+ * Used for color variance and quantization.
+ * @param lab1 First Lab color.
+ * @param lab2 Second Lab color.
+ * @returns DeltaE value (Euclidean distance).
+ */
 function deltaE(lab1: [number, number, number], lab2: [number, number, number]) {
     return Math.sqrt(
         Math.pow(lab1[0] - lab2[0], 2) +
@@ -979,6 +1098,17 @@ function deltaE(lab1: [number, number, number], lab2: [number, number, number]) 
     );
 }
 
+/**
+ * Calculates color statistics (mean, variance) for a square region of image data.
+ * Used for adaptive quadtree splitting.
+ * @param imageData The image pixel data (Uint8ClampedArray).
+ * @param imageWidth Width of the image.
+ * @param imageHeight Height of the image.
+ * @param x X coordinate of the region.
+ * @param y Y coordinate of the region.
+ * @param size Size of the square region.
+ * @returns Object with average color, variance, and region size.
+ */
 function calculateRegionStats(imageData: Uint8ClampedArray, imageWidth: number, imageHeight: number, x: number, y: number, size: number) {
     const endX = Math.min(x + size, imageWidth);
     const endY = Math.min(y + size, imageHeight);
@@ -1052,6 +1182,12 @@ function calculateRegionStats(imageData: Uint8ClampedArray, imageWidth: number, 
     };
 }
 
+/**
+ * Builds a set of QuadCell rectangles from image data using an adaptive quadtree algorithm.
+ * Recursively splits regions based on color variance and minimum cell size.
+ * @param imageData The image data (ImageData object).
+ * @returns Array of QuadCell rectangles.
+ */
 function buildQuadtreeCells(imageData: ImageData): QuadCell[] {
     const { width, height, data } = imageData;
     const rootSize = nextPowerOfTwo(Math.max(width, height));
@@ -1098,6 +1234,13 @@ function buildQuadtreeCells(imageData: ImageData): QuadCell[] {
     return cells;
 }
 
+/**
+ * Generates an HTML table section from a set of QuadCell rectangles.
+ * Merges rectangles and builds a table for email rendering.
+ * @param result The transformed image result (rectangles, width, height).
+ * @param fileName The original file name for labeling.
+ * @returns HTML string for the merged rectangles image.
+ */
 function createHtmlSectionFromQuadCells(result: TransformedImageResult, fileName: string | null): string {
     const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
     // Merge rectangles
@@ -1179,6 +1322,13 @@ function createHtmlSectionFromQuadCells(result: TransformedImageResult, fileName
     return html;
 }
 
+/**
+ * Transforms an image file into a set of rectangles using the rectangle covering pipeline.
+ * Handles resizing, color quantization, and rectangle merging.
+ * Returns a TransformedImageResult for HTML table generation.
+ * @param file The image file to transform.
+ * @returns Promise resolving to TransformedImageResult.
+ */
 function transformImage(file: File): Promise<TransformedImageResult> {
     return new Promise((resolve, reject) => {
         void (async () => {
@@ -1311,16 +1461,17 @@ function transformImage(file: File): Promise<TransformedImageResult> {
 }
 
 export default function MailRendering() {
-        // BSP parameter states
-        const [minCellSize, setMinCellSize] = useState(4);
-        const [kMeansPaletteSize, setKMeansPaletteSize] = useState(256);
-        const [bspWidth, setBspWidth] = useState(512);
+    // BSP parameter states
+    const [minCellSize, setMinCellSize] = useState(1);
+    const [kMeansPaletteSize, setKMeansPaletteSize] = useState(256);
+    const [bspWidth, setBspWidth] = useState(100);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [originalPreviewUrl, setOriginalPreviewUrl] = useState<string | null>(null);
-    const [transformedResult, setTransformedResult] = useState<TransformedImageResult | null>(null);
+    // HTML table and stats state
+    const [htmlTable, setHtmlTable] = useState<string | null>(null);
+    const [htmlTableStats, setHtmlTableStats] = useState<{ bspRects: number; width: number; height: number } | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [selectedPipeline, setSelectedPipeline] = useState<'rectangle' | 'bsp' | null>(null);
 
     // New: track if an image is uploaded and ready for transform
     const [isImageUploaded, setIsImageUploaded] = useState(false);
@@ -1328,134 +1479,7 @@ export default function MailRendering() {
 
 
     // BSP Partition pipeline
-    const imageHtmlSectionBSPPartition = useMemo(() => {
-        if (!transformedResult) return "";
-        return createHtmlSectionBSPPartition(transformedResult, selectedFile?.name ?? null);
-    }, [selectedFile, transformedResult]);
-
-    const bspRectsCount = useMemo(() => {
-        if (!transformedResult) return 0;
-        // Collect BSP rectangles
-        const safeName = selectedFile?.name ?? null;
-        // Reuse BSP logic
-        const grid: string[][] = Array.from({ length: transformedResult.height }, () => Array(transformedResult.width).fill(""));
-        transformedResult.cells.forEach(cell => {
-            for (let dy = 0; dy < cell.height; dy++) {
-                for (let dx = 0; dx < cell.width; dx++) {
-                    const y = cell.y + dy;
-                    const x = cell.x + dx;
-                    if (y < transformedResult.height && x < transformedResult.width) {
-                        grid[y][x] = cell.color;
-                    }
-                }
-            }
-        });
-        // Parameters for partitioning
-        const minSize = 4;
-        const errorThreshold = 12000;
-        // BSPNode type
-        type BSPNode = {
-            x: number;
-            y: number;
-            width: number;
-            height: number;
-            color: string;
-            error: number;
-            left?: BSPNode;
-            right?: BSPNode;
-            splitDir?: 'horizontal' | 'vertical';
-            splitPos?: number;
-        };
-        function regionStats(x: number, y: number, w: number, h: number): { color: string; error: number } {
-            let sumR = 0, sumG = 0, sumB = 0, count = 0;
-            let error = 0;
-            for (let row = y; row < y + h; row++) {
-                for (let col = x; col < x + w; col++) {
-                    const rgbMatch = grid[row][col].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-                    let r = 0, g = 0, b = 0;
-                    if (rgbMatch) {
-                        r = parseInt(rgbMatch[1], 10);
-                        g = parseInt(rgbMatch[2], 10);
-                        b = parseInt(rgbMatch[3], 10);
-                    }
-                    sumR += r;
-                    sumG += g;
-                    sumB += b;
-                    count++;
-                }
-            }
-            if (!count) return { color: 'rgb(0,0,0)', error: 0 };
-            const avgR = Math.round(sumR / count);
-            const avgG = Math.round(sumG / count);
-            const avgB = Math.round(sumB / count);
-            for (let row = y; row < y + h; row++) {
-                for (let col = x; col < x + w; col++) {
-                    const rgbMatch = grid[row][col].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-                    let r = 0, g = 0, b = 0;
-                    if (rgbMatch) {
-                        r = parseInt(rgbMatch[1], 10);
-                        g = parseInt(rgbMatch[2], 10);
-                        b = parseInt(rgbMatch[3], 10);
-                    }
-                    error += Math.pow(r - avgR, 2) + Math.pow(g - avgG, 2) + Math.pow(b - avgB, 2);
-                }
-            }
-            return { color: `rgb(${avgR}, ${avgG}, ${avgB})`, error };
-        }
-        function bspPartition(x: number, y: number, w: number, h: number, minSize: number, errorThreshold: number): BSPNode {
-            const { color, error } = regionStats(x, y, w, h);
-            if (w <= minSize && h <= minSize || error < errorThreshold) {
-                return { x, y, width: w, height: h, color, error };
-            }
-            let bestSplit: { dir: 'horizontal' | 'vertical'; pos: number; error: number } | null = null;
-            for (let split = 1; split < w; split++) {
-                const leftStats = regionStats(x, y, split, h);
-                const rightStats = regionStats(x + split, y, w - split, h);
-                const totalError = leftStats.error + rightStats.error;
-                if (!bestSplit || totalError < bestSplit.error) {
-                    bestSplit = { dir: 'vertical', pos: split, error: totalError };
-                }
-            }
-            for (let split = 1; split < h; split++) {
-                const topStats = regionStats(x, y, w, split);
-                const bottomStats = regionStats(x, y + split, w, h - split);
-                const totalError = topStats.error + bottomStats.error;
-                if (!bestSplit || totalError < bestSplit.error) {
-                    bestSplit = { dir: 'horizontal', pos: split, error: totalError };
-                }
-            }
-            if (!bestSplit) {
-                return { x, y, width: w, height: h, color, error };
-            }
-            if (bestSplit.dir === 'vertical') {
-                return {
-                    x, y, width: w, height: h, color, error,
-                    splitDir: 'vertical', splitPos: bestSplit.pos,
-                    left: bspPartition(x, y, bestSplit.pos, h, minSize, errorThreshold),
-                    right: bspPartition(x + bestSplit.pos, y, w - bestSplit.pos, h, minSize, errorThreshold)
-                };
-            } else {
-                return {
-                    x, y, width: w, height: h, color, error,
-                    splitDir: 'horizontal', splitPos: bestSplit.pos,
-                    left: bspPartition(x, y, w, bestSplit.pos, minSize, errorThreshold),
-                    right: bspPartition(x, y + bestSplit.pos, w, h - bestSplit.pos, minSize, errorThreshold)
-                };
-            }
-        }
-        function collectRects(node: BSPNode, rects: BSPNode[]) {
-            if (!node.left && !node.right) {
-                rects.push(node);
-            } else {
-                if (node.left) collectRects(node.left, rects);
-                if (node.right) collectRects(node.right, rects);
-            }
-        }
-        const root = bspPartition(0, 0, transformedResult.width, transformedResult.height, minSize, errorThreshold);
-        const rects: BSPNode[] = [];
-        collectRects(root, rects);
-        return rects.length;
-    }, [transformedResult]);
+    // removed imageHtmlSectionBSPPartition and bspRectsCount useMemo blocks
 
 
     // Step 1: Upload handler (just sets file and preview)
@@ -1463,7 +1487,7 @@ export default function MailRendering() {
         const file = event.target.files?.[0] ?? null;
         setSelectedFile(file);
         setErrorMessage(null);
-        setTransformedResult(null);
+        // removed setTransformedResult(null);
         if (file) {
             const sourcePreview = URL.createObjectURL(file);
             setOriginalPreviewUrl((previousUrl) => {
@@ -1479,29 +1503,17 @@ export default function MailRendering() {
         }
     };
 
-    // Step 2: Transform handler (runs after upload)
-    const handleTransform = async (pipeline: 'rectangle' | 'bsp') => {
-        if (!selectedFile) {
-            setErrorMessage("Vælg billede først.");
-            return;
-        }
-        setSelectedPipeline(pipeline);
-        setErrorMessage(null);
-        setIsProcessing(true);
-        try {
+    // Step 2: Transform handler, runs after button click
+    const handleTransform = async () => {
+        if(selectedFile) {
             let transformed: TransformedImageResult;
-            if (pipeline === 'bsp') {
-                transformed = await transformImageBSP(selectedFile);
-            } else {
-                transformed = await transformImage(selectedFile);
-            }
-            setTransformedResult(transformed);
-        } catch (error) {
-            const message = error instanceof Error ? error.message : "Image transformation failed.";
-            setErrorMessage(message);
-            setTransformedResult(null);
-        } finally {
-            setIsProcessing(false);
+            transformed = await transformImageBSP(selectedFile);
+            setHtmlTable(createHtmlSectionBSPPartition(transformed, selectedFile.name));
+            setHtmlTableStats({
+                bspRects: transformed.cells.length,
+                width: transformed.width,
+                height: transformed.height
+            });
         }
     };
 
@@ -1567,13 +1579,36 @@ export default function MailRendering() {
                         </Box>
                     </Box>
                     <Box display="flex" gap="1em" mt="1em">
-                        {/* Rectangle Cover button removed */}
                         <Button
                             bg="purple.600"
-                            isDisabled={!isImageUploaded || isProcessing}
-                            onClick={() => handleTransform('bsp')}
+                            onClick={() => handleTransform()}
                         >
                             Transform (BSP Partition)
+                        </Button>
+                        <Button
+                            bg="teal.600"
+                            onClick={async () => {
+                                if (selectedFile) {
+                                    setIsProcessing(true);
+                                    setErrorMessage(null);
+                                    try {
+                                        const pipeline = new ImageToHtmlTable();
+                                        const html = await pipeline.processImageFile(selectedFile, bspWidth, kMeansPaletteSize, 1.5, minCellSize);
+                                        setHtmlTable(html);
+                                        setHtmlTableStats(null); // No stats from class
+                                    } catch (err) {
+                                        const msg = err instanceof Error ? err.message : String(err);
+                                        setErrorMessage("ImageToHtmlTable transform failed: " + msg);
+                                        // Also log full error to console for debugging
+                                        // eslint-disable-next-line no-console
+                                        console.error("ImageToHtmlTable error:", err);
+                                    } finally {
+                                        setIsProcessing(false);
+                                    }
+                                }
+                            }}
+                        >
+                            Transform (ImageToHtmlTable class)
                         </Button>
                     </Box>
                 </Box>
@@ -1592,9 +1627,9 @@ export default function MailRendering() {
                         <ChakraImage
                             src={originalPreviewUrl}
                             alt="Uploaded preview"
-                            width={transformedResult ? `${transformedResult.width}px` : "100%"}
-                            height={transformedResult ? `${transformedResult.height}px` : "auto"}
-                            maxW={transformedResult ? `${transformedResult.width}px` : "600px"}
+                            width="100%"
+                            height="auto"
+                            maxW="600px"
                             borderRadius="8px"
                             border="1px solid #d8e1ee"
                             objectFit="cover"
@@ -1602,24 +1637,28 @@ export default function MailRendering() {
                     </Box>
                 )}
 
-                {transformedResult && selectedPipeline === 'bsp' && (
+                {htmlTable && (
                     <Box mb="1.5em">
                         <Heading as="h3" size="md" mb="0.5em">
                             BSP Partition data
                         </Heading>
-                        <Text color="#2B4570">
-                            {`BSP rectangles: ${bspRectsCount} | Canvas: ${transformedResult.width} x ${transformedResult.height}`}
-                        </Text>
-                        <Text color="#2B4570" fontSize="sm">
-                            {`Estimeret filstørrelse: ${(bspRectsCount * HTML_RECT_ESTIMATE_CHARS).toLocaleString()} karakterer (baseret på BSP)`}
-                        </Text>
-                        <Text color="#2B4570" fontSize="sm">
-                            {`≈ ${(Math.round((bspRectsCount * HTML_RECT_ESTIMATE_CHARS) / 1000)).toLocaleString()} KB`}
-                        </Text>
-                        {bspRectsCount * HTML_RECT_ESTIMATE_CHARS > 100000 && (
-                            <Text color="red.600" fontSize="sm" fontWeight="bold">
-                                Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med BSP-partition.
-                            </Text>
+                        {htmlTableStats && (
+                            <>
+                                <Text color="#2B4570">
+                                    {`BSP rectangles: ${htmlTableStats.bspRects} | Canvas: ${htmlTableStats.width} x ${htmlTableStats.height}`}
+                                </Text>
+                                <Text color="#2B4570" fontSize="sm">
+                                    {`Estimeret filstørrelse: ${(htmlTableStats.bspRects * HTML_RECT_ESTIMATE_CHARS).toLocaleString()} karakterer (baseret på BSP)`}
+                                </Text>
+                                <Text color="#2B4570" fontSize="sm">
+                                    {`≈ ${(Math.round((htmlTableStats.bspRects * HTML_RECT_ESTIMATE_CHARS) / 1000)).toLocaleString()} KB`}
+                                </Text>
+                                {htmlTableStats.bspRects * HTML_RECT_ESTIMATE_CHARS > 100000 && (
+                                    <Text color="red.600" fontSize="sm" fontWeight="bold">
+                                        Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med BSP-partition.
+                                    </Text>
+                                )}
+                            </>
                         )}
                     </Box>
                 )}
@@ -1629,20 +1668,20 @@ export default function MailRendering() {
                 {/* Rectangle Cover preview removed */}
 
                 {/* BSP Partition preview */}
-                {selectedPipeline === 'bsp' && imageHtmlSectionBSPPartition && (
+                {htmlTable && (
                     <Box mb="1.5em">
                         <Heading as="h3" size="md" mb="0.5em">
                             BSP Partition metode
                         </Heading>
                         <Text mb="1em">HTML genereret ved error-driven BSP partition af billedet.</Text>
-                        <Box mb="1em" dangerouslySetInnerHTML={{ __html: imageHtmlSectionBSPPartition }} />
+                        <Box mb="1em" dangerouslySetInnerHTML={{ __html: htmlTable }} />
                         <Box display="flex" alignItems="center" mb="0.5em">
                             <Button
                                 size="sm"
                                 colorScheme="purple"
                                 onClick={async () => {
                                     try {
-                                        await navigator.clipboard.writeText(imageHtmlSectionBSPPartition);
+                                        await navigator.clipboard.writeText(htmlTable);
                                         setErrorMessage("BSP HTML kopieret!");
                                         setTimeout(() => setErrorMessage(null), 1200);
                                     } catch {
@@ -1656,7 +1695,7 @@ export default function MailRendering() {
                             </Button>
                         </Box>
                         <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap">
-                            {imageHtmlSectionBSPPartition || "Ingen BSP HTML blev genereret."}
+                            {htmlTable || "Ingen BSP HTML blev genereret."}
                         </Box>
                     </Box>
                 )}
