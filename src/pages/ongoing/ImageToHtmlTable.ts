@@ -328,12 +328,7 @@ export class ImageToHtmlTable {
         fileName: string | null,
         useShortHex: boolean = false
     ): string {
-        const escapeHtmlAttribute = (value: string) =>
-            value.replaceAll("&", "&amp;")
-                .replaceAll("\"", "&quot;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;");
-        const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
+        // Removed file name from heading as per user request
         // Build grid for placement
         const grid: (BSPNode | null)[][] = Array.from({ length: height }, () => Array(width).fill(null));
         rects.forEach(cell => {
@@ -391,12 +386,12 @@ export class ImageToHtmlTable {
             }
             tableRows += `<tr>${rowHtml}</tr>`;
         }
-        return `<section style="padding:16px;background:#f6f8fb;border:1px solid #d8e1ee;border-radius:8px;">
+        return `<section style="padding:16px;background:#fff;border:1px solid #d8e1ee;border-radius:8px;">
     <head>
         <meta name="color-scheme" content="light">
         <meta name="supported-color-schemes" content="light">
     </head>
-    <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">BSP Partition Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${width}" height="${height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    <table cellpadding="0" cellspacing="0" border="0" width="${width}" height="${height}" style="border-collapse:collapse;padding:0;border:none;background:#fff;">${tableRows}</table></section>`;
     }
 }
 

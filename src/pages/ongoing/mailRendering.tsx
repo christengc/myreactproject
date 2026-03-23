@@ -1,6 +1,22 @@
 import { ImageToHtmlTable } from "./ImageToHtmlTable";
-// --- CONSTANTS ---
-const HTML_RECT_ESTIMATE_CHARS = 43;
+import { Spinner } from "@chakra-ui/react";
+import { useRef } from "react";
+// Estimate: average HTML chars per rectangle (for size estimation)
+const HTML_RECT_ESTIMATE_CHARS = 120;
+
+// Helper to count rectangles (cells) in a 2D array or flat array
+function countBspRectsFromCells(cells: any[], width: number, height: number): number {
+    // If cells is a flat array of rectangles, just return its length
+    if (Array.isArray(cells)) return cells.length;
+    // If cells is a 2D array, count non-null entries
+    let count = 0;
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            if (cells[y] && cells[y][x]) count++;
+        }
+    }
+    return count;
+}
 // --- CONFIGURATION ---
 const MAIL_RENDER_CONFIG = {
     blurSigma: 1.5, // Gaussian blur strength
@@ -18,133 +34,6 @@ const MAIL_RENDER_CONFIG = {
 // Rectangle covering pipeline: maximal rectangles (greedy)
 // Alternative pipeline: error-driven BSP partition
 
-/**
- * Counts the number of rectangles produced by BSP partitioning on a grid of colored cells.
- * Used to estimate the output size of the BSP HTML table.
- * @param cells Array of QuadCell rectangles representing the image.
- * @param width Width of the image grid.
- * @param height Height of the image grid.
- * @returns Number of BSP rectangles.
- */
-function countBspRectsFromCells(cells: QuadCell[], width: number, height: number): number {
-    // Build grid
-    const grid: string[][] = Array.from({ length: height }, () => Array(width).fill(""));
-    cells.forEach(cell => {
-        for (let dy = 0; dy < cell.height; dy++) {
-            for (let dx = 0; dx < cell.width; dx++) {
-                const y = cell.y + dy;
-                const x = cell.x + dx;
-                if (y < height && x < width) {
-                    grid[y][x] = cell.color;
-                }
-            }
-        }
-    });
-    // BSP partition logic (copied from useMemo)
-    const minSize = 4;
-    const errorThreshold = 12000;
-    type BSPNode = {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-        color: string;
-        error: number;
-        left?: BSPNode;
-        right?: BSPNode;
-        splitDir?: 'horizontal' | 'vertical';
-        splitPos?: number;
-    };
-    function regionStats(x: number, y: number, w: number, h: number): { color: string; error: number } {
-        let sumR = 0, sumG = 0, sumB = 0, count = 0;
-        let error = 0;
-        for (let row = y; row < y + h; row++) {
-            for (let col = x; col < x + w; col++) {
-                const rgbMatch = grid[row][col].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-                let r = 0, g = 0, b = 0;
-                if (rgbMatch) {
-                    r = parseInt(rgbMatch[1], 10);
-                    g = parseInt(rgbMatch[2], 10);
-                    b = parseInt(rgbMatch[3], 10);
-                }
-                sumR += r;
-                sumG += g;
-                sumB += b;
-                count++;
-            }
-        }
-        if (!count) return { color: 'rgb(0,0,0)', error: 0 };
-        const avgR = Math.round(sumR / count);
-        const avgG = Math.round(sumG / count);
-        const avgB = Math.round(sumB / count);
-        for (let row = y; row < y + h; row++) {
-            for (let col = x; col < x + w; col++) {
-                const rgbMatch = grid[row][col].match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-                let r = 0, g = 0, b = 0;
-                if (rgbMatch) {
-                    r = parseInt(rgbMatch[1], 10);
-                    g = parseInt(rgbMatch[2], 10);
-                    b = parseInt(rgbMatch[3], 10);
-                }
-                error += Math.pow(r - avgR, 2) + Math.pow(g - avgG, 2) + Math.pow(b - avgB, 2);
-            }
-        }
-        return { color: `rgb(${avgR}, ${avgG}, ${avgB})`, error };
-    }
-    function bspPartition(x: number, y: number, w: number, h: number, minSize: number, errorThreshold: number): BSPNode {
-        const { color, error } = regionStats(x, y, w, h);
-        if (w <= minSize && h <= minSize || error < errorThreshold) {
-            return { x, y, width: w, height: h, color, error };
-        }
-        let bestSplit: { dir: 'horizontal' | 'vertical'; pos: number; error: number } | null = null;
-        for (let split = 1; split < w; split++) {
-            const leftStats = regionStats(x, y, split, h);
-            const rightStats = regionStats(x + split, y, w - split, h);
-            const totalError = leftStats.error + rightStats.error;
-            if (!bestSplit || totalError < bestSplit.error) {
-                bestSplit = { dir: 'vertical', pos: split, error: totalError };
-            }
-        }
-        for (let split = 1; split < h; split++) {
-            const topStats = regionStats(x, y, w, split);
-            const bottomStats = regionStats(x, y + split, w, h - split);
-            const totalError = topStats.error + bottomStats.error;
-            if (!bestSplit || totalError < bestSplit.error) {
-                bestSplit = { dir: 'horizontal', pos: split, error: totalError };
-            }
-        }
-        if (!bestSplit) {
-            return { x, y, width: w, height: h, color, error };
-        }
-        if (bestSplit.dir === 'vertical') {
-            return {
-                x, y, width: w, height: h, color, error,
-                splitDir: 'vertical', splitPos: bestSplit.pos,
-                left: bspPartition(x, y, bestSplit.pos, h, minSize, errorThreshold),
-                right: bspPartition(x + bestSplit.pos, y, w - bestSplit.pos, h, minSize, errorThreshold)
-            };
-        } else {
-            return {
-                x, y, width: w, height: h, color, error,
-                splitDir: 'horizontal', splitPos: bestSplit.pos,
-                left: bspPartition(x, y, w, bestSplit.pos, minSize, errorThreshold),
-                right: bspPartition(x, y + bestSplit.pos, w, h - bestSplit.pos, minSize, errorThreshold)
-            };
-        }
-    }
-    function collectRects(node: BSPNode, rects: BSPNode[]) {
-        if (!node.left && !node.right) {
-            rects.push(node);
-        } else {
-            if (node.left) collectRects(node.left, rects);
-            if (node.right) collectRects(node.right, rects);
-        }
-    }
-    const root = bspPartition(0, 0, width, height, minSize, errorThreshold);
-    const rects: BSPNode[] = [];
-    collectRects(root, rects);
-    return rects.length;
-}
 
 /**
  * Transforms an image file into a set of rectangles using the BSP partitioning pipeline.
@@ -526,7 +415,7 @@ function createHtmlSectionBSPPartition(result: TransformedImageResult, fileName:
         <meta name="color-scheme" content="light">
         <meta name="supported-color-schemes" content="light">
     </head>
-    <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">BSP Partition HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">BSP Partition HTML Table</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
     html = html.replace(/\n/g, '').replace(/\s{2,}/g, '').replace(/>\s+</g, '><');
     return html;
 }
@@ -538,7 +427,7 @@ function createHtmlSectionBSPPartition(result: TransformedImageResult, fileName:
  * @returns HTML string for the rectangle cover image.
  */
 function createHtmlSectionRectangleCover(result: TransformedImageResult, fileName: string | null): string {
-    const safeName = fileName ? escapeHtmlAttribute(fileName) : "Uploaded image";
+    // Removed image name from HTML output
     // Build pixel grid
     const grid: string[][] = Array.from({ length: result.height }, () => Array(result.width).fill(""));
     result.cells.forEach(cell => {
@@ -626,7 +515,7 @@ function createHtmlSectionRectangleCover(result: TransformedImageResult, fileNam
         <meta name="color-scheme" content="light">
         <meta name="supported-color-schemes" content="light">
     </head>
-    <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Rectangle Cover HTML Table: ${safeName}</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
+    <h3 style="margin:0 0 12px;color:#2B4570;font-family:Arial,sans-serif;">Rectangle Cover HTML Table</h3><table cellpadding="0" cellspacing="0" border="0" width="${result.width}" height="${result.height}" style="border-collapse:collapse;padding:0;border:none;">${tableRows}</table></section>`;
     html = html.replace(/\n/g, '').replace(/\s{2,}/g, '').replace(/>\s+</g, '><');
     return html;
 }
@@ -1461,10 +1350,18 @@ function transformImage(file: File): Promise<TransformedImageResult> {
 }
 
 export default function MailRendering() {
+        // Spinner countdown state
+        const [spinnerCountdown, setSpinnerCountdown] = useState<number | null>(null);
+
+        // Cleanup interval on unmount
+        useEffect(() => {
+            // No interval cleanup needed
+            return () => {};
+        }, []);
     // BSP parameter states
-    const [minCellSize, setMinCellSize] = useState(1);
-    const [kMeansPaletteSize, setKMeansPaletteSize] = useState(256);
-    const [bspWidth, setBspWidth] = useState(100);
+    const [minCellSize, setMinCellSize] = useState(2);
+    const [kMeansPaletteSize, setKMeansPaletteSize] = useState(2048);
+    const [bspWidth, setBspWidth] = useState(300);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [originalPreviewUrl, setOriginalPreviewUrl] = useState<string | null>(null);
     // HTML table and stats state
@@ -1476,7 +1373,7 @@ export default function MailRendering() {
     // New: track if an image is uploaded and ready for transform
     const [isImageUploaded, setIsImageUploaded] = useState(false);
     // New: hex code length selection
-    const [useShortHex, setUseShortHex] = useState(false);
+    const [useShortHex, setUseShortHex] = useState(true);
 
 
 
@@ -1505,22 +1402,8 @@ export default function MailRendering() {
         }
     };
 
-    // Step 2: Transform handler, runs after button click
-    const handleTransform = async () => {
-        if(selectedFile) {
-            let transformed: TransformedImageResult;
-            transformed = await transformImageBSP(selectedFile);
-            setHtmlTable(createHtmlSectionBSPPartition(transformed, selectedFile.name));
-            setHtmlTableStats({
-                bspRects: transformed.cells.length,
-                width: transformed.width,
-                height: transformed.height
-            });
-        }
-    };
-
     return (
-        <Container>
+        <Container position="relative">
             <Breadcrumb.Root size="lg" ml={{ base: "0em", sm: "0em", md: "-16em", lg: "-16em" }} mt="0.5em" mb="0.5em">
                 <Breadcrumb.List>
                     <Breadcrumb.Item>
@@ -1541,47 +1424,97 @@ export default function MailRendering() {
                 </Breadcrumb.List>
             </Breadcrumb.Root>
 
+            {/* Spinner overlay */}
+            {isProcessing && (
+                <Box position="fixed" top={0} left={0} width="100vw" height="100vh" zIndex={2000} display="flex" alignItems="center" justifyContent="center" bg="rgba(255,255,255,0.7)">
+                    <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center">
+                        <Spinner size="xl" color="teal.500" />
+                        {spinnerCountdown !== null && (
+                            <Text mt={4} fontSize="lg" color="#2B4570" fontWeight={600}>
+                                Estimated time: {spinnerCountdown} min{spinnerCountdown === 1 ? '' : 's'}
+                            </Text>
+                        )}
+                    </Box>
+                </Box>
+            )}
             <Box className="dropShadow">
                 <Heading as="h2" size="2xl" style={fontLuckiestGuy} mb="1em">
                     Mail Rendering
                 </Heading>
                 <Text mb="1em">
-                    This page will host experiments and demos for rendering email-friendly layouts and components.
+                    As you know e-mail clients often remove images from mails, wouldn't it be nice if it couldn't remove the image?
+                    Well just send the image as HTML in an HTML e-mail. Problem solved. There is just one issue, HTML takes up a lot of space.
+                    Gmail only allows 102 KB of HTML, so we need to be clever about how we transform the image.
+                    A fun little experiment to see how images can be transformed into HTML tables for email rendering.
+                    The method used is to initially sample the image to a lower resolution, then blur the image to further reduce details.
+                    Then finally we can use an algorithm that finds the rectangles in the image with similar colors, that can be defined in the HTML.
+                    We use a binary space partitioning method, that splits the image into rectangles based on color similarity, and then merges those rectangles to further reduce the number of elements.
+                    We then finally also quantize the colors to a smaller palette using k-means clustering, to further reduce the HTML size.
+                    The last operation is then to generate HTML based on the rectangles, where each rectangle becomes a table cell with a background color.
+
+                    Upload an image, adjust the parameters, and see how it looks in an email!
                 </Text>
 
                 <Box mb="1.5em">
                     <label htmlFor="mail-image-upload" style={{ display: "block", marginBottom: "0.5em", color: "#2B4570", fontWeight: 600 }}>
-                        Upload an image
+                        1. Select the image you wish to use.
                     </label>
-                    <input
-                        id="mail-image-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageSelect}
-                    />
+                    <Box mb="1em">
+                        <input
+                            id="mail-image-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageSelect}
+                            style={{ display: "none" }}
+                        />
+                        <label htmlFor="mail-image-upload">
+                            <Button as="span" bg="teal.600" color="white" _hover={{ bg: "teal.700" }}>
+                                Select File
+                            </Button>
+                        </label>
+                    </Box>
+                    {originalPreviewUrl && (
+                        <Box mb="1.5em" mt="1em">
+                            <Heading as="h3" size="md" mb="0.5em">
+                                Original image preview
+                            </Heading>
+                            <ChakraImage
+                                src={originalPreviewUrl}
+                                alt="Uploaded preview"
+                                width="auto"
+                                height="300px"
+                                maxH="300px"
+                                maxW="100%"
+                                borderRadius="8px"
+                                border="1px solid #d8e1ee"
+                                objectFit="cover"
+                            />
+                        </Box>
+                    )}
                     {/* BSP parameter controls */}
-                    <Box display="flex" gap="1em" mb="1em" alignItems="center">
+                    <label style={{ display: "block", marginTop: "2em", fontWeight: 600 }}>2. Set the quality for how the generated HTML image should be rendered.</label>
+                    <Box display="flex" gap="1em" mt="1em" mb="1em" alignItems="center">
                                                 <Box>
-                                                    <label htmlFor="hexLength-select" style={{ fontWeight: 600, color: "#2B4570" }}>Hex Code:</label>
+                                                    <label htmlFor="hexLength-select" style={{ fontWeight: 600, color: "#2B4570" }}>Hex Code size:</label>
                                                     <select id="hexLength-select" value={useShortHex ? "short" : "long"} onChange={e => setUseShortHex(e.target.value === "short")} style={{ marginLeft: 8 }}>
                                                         <option value="long">6-digit (#RRGGBB)</option>
                                                         <option value="short">3-digit (#RGB)</option>
                                                     </select>
                                                 </Box>
                         <Box>
-                            <label htmlFor="minCellSize-select" style={{ fontWeight: 600, color: "#2B4570" }}>minCellSize:</label>
+                            <label htmlFor="minCellSize-select" style={{ fontWeight: 600, color: "#2B4570" }}>Min Cell Size:</label>
                             <select id="minCellSize-select" value={minCellSize} onChange={e => setMinCellSize(Number(e.target.value))} style={{ marginLeft: 8 }}>
                                 {[1,2,4,8,16].map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
                         </Box>
                         <Box>
-                            <label htmlFor="kMeansPaletteSize-select" style={{ fontWeight: 600, color: "#2B4570" }}>KMeansPaletteSize:</label>
+                            <label htmlFor="kMeansPaletteSize-select" style={{ fontWeight: 600, color: "#2B4570" }}>K-Means Palette Size:</label>
                             <select id="kMeansPaletteSize-select" value={kMeansPaletteSize} onChange={e => setKMeansPaletteSize(Number(e.target.value))} style={{ marginLeft: 8 }}>
                                 {[256,512,1024,2048,4096,8192,16384].map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
                         </Box>
                         <Box>
-                            <label htmlFor="bspWidth-select" style={{ fontWeight: 600, color: "#2B4570" }}>Width:</label>
+                            <label htmlFor="bspWidth-select" style={{ fontWeight: 600, color: "#2B4570" }}>Width of output html:</label>
                             <select id="bspWidth-select" value={bspWidth} onChange={e => setBspWidth(Number(e.target.value))} style={{ marginLeft: 8 }}>
                                 {Array.from({length: 15}, (_, i) => 100 + i * 50).map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
@@ -1589,17 +1522,25 @@ export default function MailRendering() {
                     </Box>
                     <Box display="flex" gap="1em" mt="1em">
                         <Button
-                            bg="purple.600"
-                            onClick={() => handleTransform()}
-                        >
-                            Transform (BSP Partition)
-                        </Button>
-                        <Button
                             bg="teal.600"
                             onClick={async () => {
                                 if (selectedFile) {
                                     setIsProcessing(true);
                                     setErrorMessage(null);
+                                    // Improved time estimate logic (in minutes)
+                                    let baseTime = (bspWidth / 100) * (kMeansPaletteSize / 1024) * 2;
+                                    if (bspWidth <= 200 && kMeansPaletteSize <= 512 && minCellSize >= 4) {
+                                        baseTime = baseTime / 2;
+                                    }
+                                    if (bspWidth > 400 || kMeansPaletteSize > 2048 || minCellSize === 1) {
+                                        baseTime = baseTime * 2;
+                                    }
+                                    if (bspWidth > 500 && minCellSize === 1 && kMeansPaletteSize >= 2048) {
+                                        baseTime = baseTime * 2;
+                                    }
+                                    // Convert to minutes, round up
+                                    const estimatedMinutes = Math.max(1, Math.ceil(baseTime / 60));
+                                    setSpinnerCountdown(estimatedMinutes);
                                     try {
                                         const pipeline = new ImageToHtmlTable();
                                         const html = await pipeline.processImageFile(selectedFile, bspWidth, kMeansPaletteSize, 1.5, minCellSize, useShortHex);
@@ -1610,11 +1551,12 @@ export default function MailRendering() {
                                         setErrorMessage(msg);
                                     } finally {
                                         setIsProcessing(false);
+                                        setSpinnerCountdown(null);
                                     }
                                 }
                             }}
                         >
-                            Transform (ImageToHtmlTable)
+                            Transform Image to HTML
                         </Button>
                     </Box>
                 </Box>
@@ -1625,49 +1567,7 @@ export default function MailRendering() {
                     </Text>
                 )}
 
-                {originalPreviewUrl && (
-                    <Box mb="1.5em">
-                        <Heading as="h3" size="md" mb="0.5em">
-                            Original image preview
-                        </Heading>
-                        <ChakraImage
-                            src={originalPreviewUrl}
-                            alt="Uploaded preview"
-                            width="100%"
-                            height="auto"
-                            maxW="600px"
-                            borderRadius="8px"
-                            border="1px solid #d8e1ee"
-                            objectFit="cover"
-                        />
-                    </Box>
-                )}
-
-                {htmlTable && (
-                    <Box mb="1.5em">
-                        <Heading as="h3" size="md" mb="0.5em">
-                            BSP Partition data
-                        </Heading>
-                        {htmlTableStats && (
-                            <>
-                                <Text color="#2B4570">
-                                    {`BSP rectangles: ${htmlTableStats.bspRects} | Canvas: ${htmlTableStats.width} x ${htmlTableStats.height}`}
-                                </Text>
-                                <Text color="#2B4570" fontSize="sm">
-                                    {`Estimeret filstørrelse: ${(htmlTableStats.bspRects * HTML_RECT_ESTIMATE_CHARS).toLocaleString()} karakterer (baseret på BSP)`}
-                                </Text>
-                                <Text color="#2B4570" fontSize="sm">
-                                    {`≈ ${(Math.round((htmlTableStats.bspRects * HTML_RECT_ESTIMATE_CHARS) / 1000)).toLocaleString()} KB`}
-                                </Text>
-                                {htmlTableStats.bspRects * HTML_RECT_ESTIMATE_CHARS > 100000 && (
-                                    <Text color="red.600" fontSize="sm" fontWeight="bold">
-                                        Advarsel: Det var ikke muligt at holde filstørrelsen under 100 KB med BSP-partition.
-                                    </Text>
-                                )}
-                            </>
-                        )}
-                    </Box>
-                )}
+                {/* Image preview is now shown directly under the file input above */}
 
                 {/* BSP Partition stats and preview */}
 
@@ -1677,24 +1577,14 @@ export default function MailRendering() {
                 {htmlTable && (
                     <Box mb="1.5em">
                         <Heading as="h3" size="md" mb="0.5em">
-                            BSP Partition metode
+                            3. HTML Image Generated
                         </Heading>
-                        <Text mb="1em">HTML genereret ved error-driven BSP partition af billedet.</Text>
-                        {/* Preview only the first 4 lines of the HTML as text, with ellipsis if longer */}
-                        <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap" maxHeight="6em">
-                            {(() => {
-                                if (!htmlTable) return "Ingen BSP HTML blev genereret.";
-                                const lines = htmlTable.split(/\r?\n/);
-                                if (lines.length <= 4) return htmlTable;
-                                return lines.slice(0, 4).join("\n") + "\n...";
-                            })()}
-                        </Box>
-                        {/* Show the HTML image preview below the text preview */}
-                        <Box mb="1em" dangerouslySetInnerHTML={{ __html: htmlTable }} />
+                        <Text mb="1em">Below you have the generated HTML image as well as the HTML text.</Text>
+                        {/* Move the Copy button above the HTML preview */}
                         <Box display="flex" alignItems="center" mb="0.5em">
                             <Button
                                 size="sm"
-                                colorScheme="purple"
+                                bg="teal.600"
                                 onClick={async () => {
                                     try {
                                         await navigator.clipboard.writeText(htmlTable);
@@ -1707,9 +1597,20 @@ export default function MailRendering() {
                                 }}
                                 mr="1em"
                             >
-                                Kopier BSP HTML
+                                Copy HTML to Clipboard
                             </Button>
                         </Box>
+                        {/* Preview only the first 4 lines of the HTML as text, with ellipsis if longer */}
+                        <Box as="pre" p="1em" borderRadius="8px" bg="#f7f9fc" border="1px solid #d8e1ee" overflowX="auto" whiteSpace="pre-wrap" maxHeight="6em" mb="2em">
+                            {(() => {
+                                if (!htmlTable) return "Ingen BSP HTML blev genereret.";
+                                const lines = htmlTable.split(/\r?\n/);
+                                if (lines.length <= 4) return htmlTable;
+                                return lines.slice(0, 4).join("\n") + "\n...";
+                            })()}
+                        </Box>
+                        {/* Add extra space above the HTML image preview */}
+                        <Box mb="1em" mt="2em" dangerouslySetInnerHTML={{ __html: htmlTable }} />
                     </Box>
                 )}
             </Box>

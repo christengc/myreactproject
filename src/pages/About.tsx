@@ -92,9 +92,10 @@ export default function About() {
 , where users could design their own quizzes for smartwatches and share them. Links to the Wayback Machine and YouTube can be found here:
           <Link color="#2B4570" href="https://web.archive.org/web/20180808002923/http://watchandspin.com/" target="_blank" m="0em 1em">www.watchandspin.com <FaExternalLinkSquareAlt  /></Link>
           <Link color="#2B4570" href="https://www.youtube.com/watch?v=I02Dh1zemuM" target="_blank" m="0em 1em">and demo on youtube <FaExternalLinkSquareAlt  /></Link>
-
-          {/* Embedded YouTube video (Chakra Box with iframe) */}
-          <Box mt={6} mb={6} w="100%" maxW="560px" mx="auto" aspectRatio={16/9}>
+          </Text>
+          
+         {/* Embedded YouTube video (Chakra Box with iframe) */}
+          <Box mt={6} mb={6} w="100%" maxW="560px" style={{ marginLeft: 0 }} aspectRatio={16/9}>
             <iframe
               width="100%"
               height="315"
@@ -106,8 +107,7 @@ export default function About() {
               style={{ borderRadius: '12px', width: '100%', height: '100%' }}
             />
           </Box>
-          </Text>
-          
+
       </Box>
       <Box className="dropShadow">
       <Heading as="h3" size="2xl" style={fontLuckiestGuy} mb="2em">Meet my family</Heading>
