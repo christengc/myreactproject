@@ -1369,6 +1369,8 @@ export default function MailRendering() {
     const [htmlTableStats, setHtmlTableStats] = useState<{ bspRects: number; width: number; height: number } | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    // New: state for current processing step message
+    const [processingStep, setProcessingStep] = useState<string | null>(null);
 
     // New: track if an image is uploaded and ready for transform
     const [isImageUploaded, setIsImageUploaded] = useState(false);
@@ -1429,8 +1431,13 @@ export default function MailRendering() {
                 <Box position="fixed" top={0} left={0} width="100vw" height="100vh" zIndex={2000} display="flex" alignItems="center" justifyContent="center" bg="rgba(255,255,255,0.7)">
                     <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center">
                         <Spinner size="xl" color="teal.500" />
-                        {spinnerCountdown !== null && (
+                        {processingStep && (
                             <Text mt={4} fontSize="lg" color="#2B4570" fontWeight={600}>
+                                {processingStep}
+                            </Text>
+                        )}
+                        {spinnerCountdown !== null && (
+                            <Text mt={2} fontSize="md" color="#2B4570">
                                 Estimated time: {spinnerCountdown} min{spinnerCountdown === 1 ? '' : 's'}
                             </Text>
                         )}
@@ -1493,9 +1500,16 @@ export default function MailRendering() {
                     )}
                     {/* BSP parameter controls */}
                     <label style={{ display: "block", marginTop: "2em", fontWeight: 600 }}>2. Set the quality for how the generated HTML image should be rendered.</label>
-                    <Box display="flex" gap="1em" mt="1em" mb="1em" alignItems="center">
+                    <Box
+                        display="flex"
+                        flexDirection={{ base: "column", lg: "row" }}
+                        gap="1em"
+                        mt="1em"
+                        mb="1em"
+                        alignItems="center"
+                    >
                                                 <Box>
-                                                    <label htmlFor="hexLength-select" style={{ fontWeight: 600, color: "#2B4570" }}>Hex Code size:</label>
+                                                    <label htmlFor="hexLength-select" style={{ fontWeight: 600, color: "#2B4570" }}>Hex Code Size:</label>
                                                     <select id="hexLength-select" value={useShortHex ? "short" : "long"} onChange={e => setUseShortHex(e.target.value === "short")} style={{ marginLeft: 8 }}>
                                                         <option value="long">6-digit (#RRGGBB)</option>
                                                         <option value="short">3-digit (#RGB)</option>
@@ -1510,13 +1524,13 @@ export default function MailRendering() {
                         <Box>
                             <label htmlFor="kMeansPaletteSize-select" style={{ fontWeight: 600, color: "#2B4570" }}>K-Means Palette Size:</label>
                             <select id="kMeansPaletteSize-select" value={kMeansPaletteSize} onChange={e => setKMeansPaletteSize(Number(e.target.value))} style={{ marginLeft: 8 }}>
-                                {[256,512,1024,2048,4096,8192,16384].map(v => <option key={v} value={v}>{v}</option>)}
+                                {[256,512,1024,2048,4096,8192].map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
                         </Box>
                         <Box>
                             <label htmlFor="bspWidth-select" style={{ fontWeight: 600, color: "#2B4570" }}>Width of output html:</label>
                             <select id="bspWidth-select" value={bspWidth} onChange={e => setBspWidth(Number(e.target.value))} style={{ marginLeft: 8 }}>
-                                {Array.from({length: 15}, (_, i) => 100 + i * 50).map(v => <option key={v} value={v}>{v}</option>)}
+                                {Array.from({length: 13}, (_, i) => 100 + i * 50).map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
                         </Box>
                     </Box>
@@ -1527,6 +1541,7 @@ export default function MailRendering() {
                                 if (selectedFile) {
                                     setIsProcessing(true);
                                     setErrorMessage(null);
+                                    setProcessingStep("Starting image processing...");
                                     // Improved time estimate logic (in minutes)
                                     let baseTime = (bspWidth / 100) * (kMeansPaletteSize / 1024) * 2;
                                     if (bspWidth <= 200 && kMeansPaletteSize <= 512 && minCellSize >= 4) {
@@ -1543,7 +1558,16 @@ export default function MailRendering() {
                                     setSpinnerCountdown(estimatedMinutes);
                                     try {
                                         const pipeline = new ImageToHtmlTable();
-                                        const html = await pipeline.processImageFile(selectedFile, bspWidth, kMeansPaletteSize, 1.5, minCellSize, useShortHex);
+                                        // Pass a callback to update the step message
+                                        const html = await pipeline.processImageFile(
+                                            selectedFile,
+                                            bspWidth,
+                                            kMeansPaletteSize,
+                                            1.5,
+                                            minCellSize,
+                                            useShortHex,
+                                            (stepMsg: string) => setProcessingStep(stepMsg)
+                                        );
                                         setHtmlTable(html);
                                         setHtmlTableStats(null); // No stats from class
                                     } catch (err) {
@@ -1552,6 +1576,7 @@ export default function MailRendering() {
                                     } finally {
                                         setIsProcessing(false);
                                         setSpinnerCountdown(null);
+                                        setProcessingStep(null);
                                     }
                                 }
                             }}

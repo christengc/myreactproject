@@ -61,7 +61,7 @@ function App() {
                 <Box p="1em" ml="1em" mr="auto">
                   <Icon as={FaKissWinkHeart} mr="0.5em"></Icon>
                   <Link color="#2B4570" variant="plain" href="/about" textAlign="left">
-                    Who is Christen123?
+                    Who is Christen?
                   </Link>
                 </Box>
                 <Box p="1em" ml="1em" mr="auto">
