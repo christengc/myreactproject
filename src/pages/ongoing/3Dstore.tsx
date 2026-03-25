@@ -4,7 +4,7 @@ type ShelfProps = {
   rotation?: [number, number, number];
   [key: string]: any;
 };
-function Shelf({ position = [0, 0, 0], rotation = [0, 0, 0], ...props }: ShelfProps) {
+function Scene({ position = [0, 0, 0], rotation = [0, 0, 0], ...props }: ShelfProps) {
     return (
         <group position={position} rotation={rotation} {...props}>
             {/* Vertical sides */}
@@ -161,9 +161,9 @@ function StoreScene() {
                     <meshStandardMaterial color="#8B5A2B" />
                 </mesh>
             {/* Hollow shelf at front (now a component) */}
-            <Shelf position={[-10,0,18.5]} />
+            <Scene position={[-10,0,18.5]} />
             {/* Hollow shelf at back (now a component) */}
-            <Shelf position={[-10,0,-18.5]} />
+            <Scene position={[-10,0,-18.5]} />
             {/* Walls */}
             {/* Right wall (solid) */}
             <mesh position={[-10, 4, -19.5]} receiveShadow castShadow>
