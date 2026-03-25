@@ -28,6 +28,12 @@ export default function Ongoing() {
         <List.Indicator asChild color="#2B4570">
           <RiProgress6Line />
         </List.Indicator>
+        <Link href="/ongoing/3d-store">3D Store: Interactive 3D store demo (WASD + mouse)</Link>
+      </List.Item>
+      <List.Item>
+        <List.Indicator asChild color="#2B4570">
+          <RiProgress6Line />
+        </List.Indicator>
         To come....
       </List.Item>
     </List.Root>

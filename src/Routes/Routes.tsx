@@ -4,6 +4,7 @@ import Contact from '../pages/Contact'
 import Cv from '../pages/Cv'
 import Shapes from '../pages/ongoing/Shapes'
 import MailRendering from '../pages/ongoing/mailRendering'
+import D3Store from '../pages/ongoing/3Dstore'
 import Ongoing from '../pages/Ongoing'
 import Projects from '../pages/Projects'
 import App from '../App'
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
         {path: "projects", element: <Projects />},
         {path: "ongoing/shapes", element: <Shapes />},
         {path: "ongoing/mail-rendering", element: <MailRendering />},
+        {path: "ongoing/3d-store", element: <D3Store />},
       ]
  } 
 ])

@@ -66,7 +66,11 @@ export default function About() {
     <Container>
       <Box className="dropShadow">
         <Heading as="h2" fontSize="5xl" lineHeight="1.2" color="cyan.solid" pb="1em" style={fontLuckiestGuy}>Nice to meet you :)</Heading>
-        <Text maxW="55%" color="#2B4570" p="0.5em 0em" fontSize="xl">Since you're here, let me tell you a bit about myself. On this page, you can read about my hobbies and professional interests.</Text>
+        <Text maxW="55%" color="#2B4570" p="0.5em 0em" fontSize="xl">Since you're here, let me tell you a bit about myself. I'm a dad, an engineer, and a software developer with experience ranging from embedded systems to enterprise web applications. <br></br>
+
+I enjoy working across the stack, with a particular interest in frontend development and building user-focused solutions. I'm passionate about new technology and enjoy diving into areas like machine learning, AI, and computer vision.<br></br>
+
+On this page, you can explore both my professional work and some of the projects and interests I pursue in my spare time.<br></br></Text>
 
         <Flex justify="flex-end" mt="-9em"><Image borderRadius="full" fit="cover" w="25%" minW={{base: "6em", sm: "6em", md: "8em" }} mr="-1em" src="/christen.jpg" alt="react" /></Flex>
         </Box>
