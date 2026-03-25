@@ -265,8 +265,8 @@ export default function Store3DPage() {
                     <br></br><br></br>
                     This is a 3D store demo using React Three Fiber (R3F) and three.js. Use WASD or arrow keys to move the camera.
                 </Text>
-                <Box w="100%" maxW="700px" h="90vh" p={0} m={0}>
-                    <Canvas shadows camera={{ position: [0, 2, 8], fov: 60 }} style={{ width: '100%', height: '100%' }}>
+                <Box w="100%" maxW="700px" h="90vh" p={0} m={0} border="4px solid #2B4570" borderRadius="xl" overflow="hidden">
+                    <Canvas shadows camera={{ position: [65, 40, 15], fov: 45 }} style={{ width: '100%', height: '100%' }}>
                         <CameraController />
                         <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
                         <StoreScene />
