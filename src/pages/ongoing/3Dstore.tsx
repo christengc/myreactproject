@@ -261,9 +261,9 @@ export default function Store3DPage() {
                     Then later again in the 2000s a 3d world like second life was the promise and 
                     finally in the 2020s the metaverse was going to be the future? 
                     <br></br><br></br>
-                    well, I am still waiting for that, but in the meantime, I wanted to experiment with creating a simple 3D store demo using React Three Fiber (R3F) and three.js. Use WASD or arrow keys to move the camera.
+                    well, I am still waiting for that, but in the meantime, I wanted to experiment with creating a simple 3D store demo using React Three Fiber (R3F) and three.js. This is an early prototype, but I plan to a a mechanism where you can plan your own store layout using simple drag and drop mechanics.
                     <br></br><br></br>
-                    This is a 3D store demo using React Three Fiber (R3F) and three.js. Use WASD or arrow keys to move the camera.
+                    Use WASD or arrow keys to move the camera and mouse to look around.
                 </Text>
                 <Box w="100%" maxW="700px" h="90vh" p={0} m={0} border="4px solid #2B4570" borderRadius="xl" overflow="hidden">
                     <Canvas shadows camera={{ position: [65, 40, 15], fov: 45 }} style={{ width: '100%', height: '100%' }}>
