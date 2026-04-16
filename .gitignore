@@ -29,7 +29,6 @@ dist-ssr
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
-*.mp4
 
 # Python
 __pycache__/
