@@ -1,0 +1,15 @@
+# 1. Upload the zip (e.g. via scp)
+scp ball_tracking_deploy.zip user@server:/path/to/deploy/
+
+# 2. SSH in and unzip
+ssh user@server
+cd /path/to/deploy
+unzip ball_tracking_deploy.zip
+
+# 3. Create venv and install dependencies
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# 4. Run
+python save_video.py  
