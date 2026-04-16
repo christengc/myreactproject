@@ -167,12 +167,17 @@ class VideoProcessor:
                     break
                 video_writer.release()
                 video_writer = None
+            # Find ffmpeg binary
+            ffmpeg_bin = '/usr/local/bin/ffmpeg'
+            if not os.path.isfile(ffmpeg_bin):
+                ffmpeg_bin = 'ffmpeg'  # fallback to PATH
+
             # If no OpenCV codec worked, use ffmpeg pipe as fallback
             ffmpeg_proc = None
             if video_writer is None:
                 print(f"[SAVE] No OpenCV codec worked, using ffmpeg pipe")
                 ffmpeg_proc = subprocess.Popen([
-                    'ffmpeg', '-y',
+                    ffmpeg_bin, '-y',
                     '-f', 'rawvideo', '-pix_fmt', 'bgr24',
                     '-s', f'{frame_w}x{frame_h}',
                     '-r', str(self.framespersecond),
@@ -462,11 +467,12 @@ class VideoProcessor:
             video_writer.release()
             print(f"[SAVE] Finished writing {self.output_path}")
             # Re-encode to H.264 for browser compatibility
+            ffmpeg_bin = '/usr/local/bin/ffmpeg' if os.path.isfile('/usr/local/bin/ffmpeg') else 'ffmpeg'
             temp_path = self.output_path + '.tmp.mp4'
             os.rename(self.output_path, temp_path)
             try:
-                subprocess.run([
-                    'ffmpeg', '-y', '-i', temp_path,
+                result = subprocess.run([
+                    ffmpeg_bin, '-y', '-i', temp_path,
                     '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
                     '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
                     self.output_path
