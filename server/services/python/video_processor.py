@@ -1,3 +1,5 @@
+import os
+import subprocess
 import time
 import cv2
 import numpy as np
@@ -164,7 +166,24 @@ class VideoProcessor:
                     print(f"[SAVE] Using codec: {codec}")
                     break
                 video_writer.release()
-            print(f"[SAVE] Writing output to {self.output_path} ({frame_w}x{frame_h} @ {self.framespersecond}fps)")
+                video_writer = None
+            # If no OpenCV codec worked, use ffmpeg pipe as fallback
+            ffmpeg_proc = None
+            if video_writer is None:
+                print(f"[SAVE] No OpenCV codec worked, using ffmpeg pipe")
+                ffmpeg_proc = subprocess.Popen([
+                    'ffmpeg', '-y',
+                    '-f', 'rawvideo', '-pix_fmt', 'bgr24',
+                    '-s', f'{frame_w}x{frame_h}',
+                    '-r', str(self.framespersecond),
+                    '-i', '-',
+                    '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+                    '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+                    self.output_path
+                ], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(f"[SAVE] ffmpeg pipe writing to {self.output_path} ({frame_w}x{frame_h} @ {self.framespersecond}fps)")
+            else:
+                print(f"[SAVE] Writing output to {self.output_path} ({frame_w}x{frame_h} @ {self.framespersecond}fps)")
 
         success = True
         processed_frames = 0
@@ -387,6 +406,8 @@ class VideoProcessor:
                 if self.headless:
                     if video_writer is not None:
                         video_writer.write(output)
+                    elif ffmpeg_proc is not None:
+                        ffmpeg_proc.stdin.write(output.tobytes())
                 else:
                     cv2.imshow('frame output', output)
                     self.enable_mouse_capture('frame output')
@@ -440,6 +461,29 @@ class VideoProcessor:
         if video_writer is not None:
             video_writer.release()
             print(f"[SAVE] Finished writing {self.output_path}")
+            # Re-encode to H.264 for browser compatibility
+            temp_path = self.output_path + '.tmp.mp4'
+            os.rename(self.output_path, temp_path)
+            try:
+                subprocess.run([
+                    'ffmpeg', '-y', '-i', temp_path,
+                    '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+                    '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+                    self.output_path
+                ], check=True, capture_output=True)
+                os.remove(temp_path)
+                print(f"[SAVE] Re-encoded to H.264: {self.output_path}")
+            except Exception as e:
+                print(f"[SAVE] ffmpeg re-encode failed: {e}, keeping original")
+                os.rename(temp_path, self.output_path)
+        elif ffmpeg_proc is not None:
+            ffmpeg_proc.stdin.close()
+            ffmpeg_proc.wait()
+            if ffmpeg_proc.returncode == 0:
+                print(f"[SAVE] ffmpeg pipe finished successfully: {self.output_path}")
+            else:
+                stderr = ffmpeg_proc.stderr.read().decode()
+                print(f"[SAVE] ffmpeg pipe failed (rc={ffmpeg_proc.returncode}): {stderr[:500]}")
         self.vid.release()
         cv2.destroyAllWindows()
 
