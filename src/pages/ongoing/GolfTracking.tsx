@@ -27,7 +27,7 @@ export default function GolfTracking() {
         const formData = new FormData();
         formData.append("video", videoFile);
         try {
-            const response = await fetch("/api/track-golf-video/", {
+            const response = await fetch("https://api.christenchristensen.dk/api/track-golf-video/", {
                 method: "POST",
                 body: formData,
             });
@@ -50,13 +50,13 @@ export default function GolfTracking() {
         if (polling && jobId) {
             const poll = async () => {
                 try {
-                    const res = await fetch(`/api/track-golf-video-status/${jobId}`);
+                    const res = await fetch(`https://api.christenchristensen.dk/api/track-golf-video-status/${jobId}`);
                     if (res.ok) {
                         const data = await res.json();
                         setJobStatus(data.status);
                         if (data.status === 'done') {
                             setPolling(false);
-                            setVideoUrl(`/api/track-golf-video-result/${jobId}`);
+                            setVideoUrl(`https://api.christenchristensen.dk/api/track-golf-video-result/${jobId}`);
                         } else if (data.status === 'error') {
                             setPolling(false);
                         }
