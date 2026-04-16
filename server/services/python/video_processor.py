@@ -156,12 +156,14 @@ class VideoProcessor:
         if self.headless and self.output_path:
             frame_w = int(self.vid.get(cv2.CAP_PROP_FRAME_WIDTH))
             frame_h = int(self.vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            fourcc = cv2.VideoWriter_fourcc(*'avc1')
-            video_writer = cv2.VideoWriter(self.output_path, fourcc, self.framespersecond, (frame_w, frame_h))
-            # Fallback to mp4v if avc1 is not supported by the OpenCV build
-            if not video_writer.isOpened():
-                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            # Try codecs in order of preference; mp4v is most portable on headless Linux
+            for codec in ['avc1', 'mp4v', 'XVID']:
+                fourcc = cv2.VideoWriter_fourcc(*codec)
                 video_writer = cv2.VideoWriter(self.output_path, fourcc, self.framespersecond, (frame_w, frame_h))
+                if video_writer.isOpened():
+                    print(f"[SAVE] Using codec: {codec}")
+                    break
+                video_writer.release()
             print(f"[SAVE] Writing output to {self.output_path} ({frame_w}x{frame_h} @ {self.framespersecond}fps)")
 
         success = True
