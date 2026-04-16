@@ -16,7 +16,8 @@ const trackGolfVideo = async (req, res) => {
             .then((outputPath) => {
                 jobStatusMap[jobId] = { status: 'done', outputPath };
             })
-            .catch(() => {
+            .catch((err) => {
+                console.error(`[GolfTracking] Job ${jobId} failed:`, err);
                 jobStatusMap[jobId] = 'error';
             });
         // Set initial status

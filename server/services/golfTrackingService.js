@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { spawn } from 'child_process';
+import os from 'os';
 
 export const saveAndProcessVideo = async (file) => {
     const __filename = fileURLToPath(import.meta.url);
@@ -31,7 +32,8 @@ export const runPythonProcess = (inputVideoPath) => {
         const base = inputVideoPath.slice(0, -ext.length);
         const outputVideoPath = `${base}_tracked.mp4`;
 
-        const python = spawn('python', [scriptPath, inputVideoPath, outputVideoPath], {
+        const pythonCmd = os.platform() === 'win32' ? 'python' : 'python3';
+        const python = spawn(pythonCmd, [scriptPath, inputVideoPath, outputVideoPath], {
             cwd: path.join(__dirname, 'python'),
         });
         let output = '';
