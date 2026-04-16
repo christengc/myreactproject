@@ -128,7 +128,7 @@ class VideoProcessor:
 
         coco_ann = {}
         if config.ENABLE_EVALUATION:
-            import os, json
+            import json
             # Indlæs COCO-annotationer én gang fra split/outline labels
             coco_path = os.path.join(config.PROJECT_DIR, 'coco splitandoutline.json')
             if os.path.exists(coco_path):
