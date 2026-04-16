@@ -27,7 +27,7 @@ export default function GolfTracking() {
         const formData = new FormData();
         formData.append("video", videoFile);
         try {
-            const response = await fetch("/api/track-golf-video", {
+            const response = await fetch("/api/track-golf-video/", {
                 method: "POST",
                 body: formData,
             });
