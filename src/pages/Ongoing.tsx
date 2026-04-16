@@ -34,7 +34,7 @@ export default function Ongoing() {
         <List.Indicator asChild color="#2B4570">
           <RiProgress6Line />
         </List.Indicator>
-        To come....
+        <Link href="/ongoing/golf-tracking">Golf Tracking: Data og visualisering af golfslag</Link>
       </List.Item>
     </List.Root>
     
