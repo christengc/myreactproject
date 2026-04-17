@@ -18,7 +18,7 @@ router.get('/track-golf-video-status/:jobId', async (req, res) => {
         return res.json({ status: 'not_found' });
     }
     if (typeof entry === 'object') {
-        return res.json({ status: entry.status });
+        return res.json({ status: entry.status, progress: entry.progress ?? null });
     }
     res.json({ status: entry });
 });

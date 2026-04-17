@@ -22,7 +22,7 @@ export const saveAndProcessVideo = async (file) => {
 };
 
 // Start the Python save_video.py process with input and output video paths
-export const runPythonProcess = (inputVideoPath) => {
+export const runPythonProcess = (inputVideoPath, onProgress) => {
     return new Promise((resolve, reject) => {
         const __filename = fileURLToPath(import.meta.url);
         const __dirname = path.dirname(__filename);
@@ -42,7 +42,16 @@ export const runPythonProcess = (inputVideoPath) => {
             output += data.toString();
         });
         python.stderr.on('data', (data) => {
-            error += data.toString();
+            const text = data.toString();
+            const lines = text.split('\n');
+            for (const line of lines) {
+                const match = line.match(/^PROGRESS:(\d+)$/);
+                if (match && onProgress) {
+                    onProgress(parseInt(match[1], 10));
+                } else if (line.trim()) {
+                    error += line + '\n';
+                }
+            }
         });
         python.on('close', (code) => {
             if (code === 0) {

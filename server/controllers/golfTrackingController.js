@@ -12,16 +12,17 @@ const trackGolfVideo = async (req, res) => {
         // Save and process video, generate jobId
         const { tempPath, jobId } = await saveAndProcessVideo(req.file);
         // Start Python process
-        runPythonProcess(tempPath)
+        jobStatusMap[jobId] = { status: 'processing', progress: 0 };
+        runPythonProcess(tempPath, (progress) => {
+            jobStatusMap[jobId] = { status: 'processing', progress };
+        })
             .then((outputPath) => {
                 jobStatusMap[jobId] = { status: 'done', outputPath };
             })
             .catch((err) => {
                 console.error(`[GolfTracking] Job ${jobId} failed:`, err);
-                jobStatusMap[jobId] = 'error';
+                jobStatusMap[jobId] = { status: 'error' };
             });
-        // Set initial status
-        jobStatusMap[jobId] = 'processing';
         res.status(200).json({ message: 'Video received and processing started.', jobId });
     } catch (err) {
         res.status(500).json({ error: 'Server error', details: err.message });

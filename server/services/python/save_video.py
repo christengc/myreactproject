@@ -33,15 +33,18 @@ def main():
 
     # Disable evaluation (no COCO json needed on server)
     config.ENABLE_EVALUATION = False
-    # Suppress all console output (keep stderr for fatal errors)
+    # Suppress all console output (keep stderr for progress + fatal errors)
     config.SILENT = True
 
-    # Keep a reference to real stderr so fatal errors are always visible
+    # Keep a reference to real stderr so progress and fatal errors are always visible
     real_stderr = sys.stderr
 
     if config.SILENT:
         sys.stdout = open(os.devnull, 'w')
         sys.stderr = open(os.devnull, 'w')
+
+    # Pass real_stderr to config so VideoProcessor can report progress
+    config._real_stderr = real_stderr
 
     try:
         if not os.path.isfile(video_path):

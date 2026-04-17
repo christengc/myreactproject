@@ -7,6 +7,7 @@ export default function GolfTracking() {
     const [uploadStatus, setUploadStatus] = useState<string>("");
     const [jobId, setJobId] = useState<string | null>(null);
     const [jobStatus, setJobStatus] = useState<string>("");
+    const [progress, setProgress] = useState<number | null>(null);
     const [polling, setPolling] = useState(false);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,31 +47,33 @@ export default function GolfTracking() {
 
     // Poll for job status every 30 seconds
     useEffect(() => {
-        let interval: number;
-        if (polling && jobId) {
-            const poll = async () => {
-                try {
-                    const res = await fetch(`https://api.christenchristensen.dk/api/track-golf-video-status/${jobId}`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        setJobStatus(data.status);
-                        if (data.status === 'done') {
-                            setPolling(false);
-                            setVideoUrl(`https://api.christenchristensen.dk/api/track-golf-video-result/${jobId}`);
-                        } else if (data.status === 'error') {
-                            setPolling(false);
-                        }
-                    } else {
-                        setJobStatus('Ukendt status');
-                    }
-                } catch {
-                    setJobStatus('Netværksfejl ved statusopslag');
+        if (!polling || !jobId) return;
+
+        let cancelled = false;
+        const poll = async () => {
+            try {
+                const res = await fetch(`https://api.christenchristensen.dk/api/track-golf-video-status/${jobId}`);
+                if (!res.ok) {
+                    setJobStatus('Ukendt status');
+                    return;
                 }
-            };
-            poll();
-            interval = setInterval(poll, 30000);
-        }
-        return () => { if (interval) clearInterval(interval); };
+                const data = await res.json();
+                if (cancelled) return;
+                setJobStatus(data.status);
+                if (data.progress != null) setProgress(data.progress);
+                if (data.status === 'done') {
+                    setPolling(false);
+                    setVideoUrl(`https://api.christenchristensen.dk/api/track-golf-video-result/${jobId}`);
+                } else if (data.status === 'error') {
+                    setPolling(false);
+                }
+            } catch {
+                if (!cancelled) setJobStatus('Netværksfejl ved statusopslag');
+            }
+        };
+        poll();
+        const interval = setInterval(poll, 30000);
+        return () => { cancelled = true; clearInterval(interval); };
     }, [polling, jobId]);
 
     return (
@@ -152,7 +155,7 @@ Below, you can see an example video where the ball has been tracked by my algori
                             />
                         </Box>
                     )}
-                    {jobStatus === 'processing' && <Text color="blue.600">Video behandles...</Text>}
+                    {jobStatus === 'processing' && <Text color="blue.600">Video behandles... {progress != null ? `${progress}%` : ''}</Text>}
                     {jobStatus === 'error' && <Text color="red.600">Der opstod en fejl under behandlingen.</Text>}
                 </Box>
             </Box>

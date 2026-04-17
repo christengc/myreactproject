@@ -192,6 +192,9 @@ class VideoProcessor:
 
         success = True
         processed_frames = 0
+        total_frames = int(self.vid.get(cv2.CAP_PROP_FRAME_COUNT))
+        last_reported_pct = -1
+        progress_stream = getattr(config, '_real_stderr', None)
         import time
         while success:
             t0 = time.time()
@@ -427,6 +430,12 @@ class VideoProcessor:
                 target_time = 1
 
             processed_frames += 1
+            if total_frames > 0 and progress_stream is not None:
+                pct = int((processed_frames / total_frames) * 100)
+                if pct != last_reported_pct:
+                    last_reported_pct = pct
+                    progress_stream.write(f"PROGRESS:{pct}\n")
+                    progress_stream.flush()
             if self.max_frames is not None and processed_frames >= self.max_frames:
                 current_pos = int(self.vid.get(cv2.CAP_PROP_POS_FRAMES))
                 print(f"[STOP] reason=processed_frames_limit processed={processed_frames} video_frame={current_pos} max_frames={self.max_frames}")
@@ -492,6 +501,10 @@ class VideoProcessor:
                 print(f"[SAVE] ffmpeg pipe failed (rc={ffmpeg_proc.returncode}): {stderr[:500]}")
         self.vid.release()
         cv2.destroyAllWindows()
+
+        if progress_stream is not None:
+            progress_stream.write("PROGRESS:100\n")
+            progress_stream.flush()
 
         if not config.ENABLE_EVALUATION:
             print(f"\n[DONE] Processed {processed_frames} frames (found ball in {found_ball_frames})")
